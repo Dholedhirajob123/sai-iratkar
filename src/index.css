@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 6.7%;
+    --foreground: 0 0% 91.8%;
+
+    --card: red;
+    --card-foreground: 0 0% 91.8%;
+
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 91.8%;
+
+    --primary: 51 100% 50%;
+    --primary-foreground: 0 0% 6.7%;
+
+    --secondary: 0 0% 11%;
+    --secondary-foreground: 0 0% 91.8%;
+
+    --muted: 0 0% 11%;
+    --muted-foreground: 0 0% 53.3%;
+
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 91.8%;
+
+    --destructive: 4 100% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 127 63% 49%;
+    --success-foreground: 0 0% 100%;
+
+    --border: 0 0% 91.8%;
+    --input: 0 0% 20%;
+    --ring: 51 100% 50%;
+
+    --radius: 0px;
+
+    --sidebar-background: 0 0% 6.7%;
+    --sidebar-foreground: 0 0% 91.8%;
+    --sidebar-primary: 51 100% 50%;
+    --sidebar-primary-foreground: 0 0% 6.7%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 91.8%;
+    --sidebar-border: 0 0% 91.8%;
+    --sidebar-ring: 51 100% 50%;
+
+    --font-mono: 'Roboto Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border/20;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer utilities {
+  .font-mono-display {
+    font-family: var(--font-mono);
+  }
+
+  .surface-card {
+    @apply bg-card border-2 border-foreground/20;
+  }
+
+  .surface-raised {
+    @apply bg-accent border-2 border-foreground/10;
+  }
+
+  .text-gold {
+    color: hsl(var(--primary));
+  }
+
+  .bg-gold {
+    background-color: hsl(var(--primary));
+  }
+
+  .text-success {
+    color: hsl(var(--success));
+  }
+
+  .text-destructive-accent {
+    color: hsl(var(--destructive));
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+@keyframes flash-gold {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: hsl(51, 100%, 50%); }
+}
+
+.animate-flash-gold {
+  animation: flash-gold 0.2s ease-in-out;
+}
+
+@keyframes flash-red {
+  0% { color: hsl(4, 100%, 60%); }
+  100% { color: hsl(0, 0%, 91.8%); }
+}
+
+.animate-flash-red {
+  animation: flash-red 0.5s ease-out;
+}
