@@ -167,7 +167,7 @@ const AdminUsers = () => {
                   >
                     {u.canAddPlayerName ? (
                       <>
-                        <Shield className="w-3 h-3" /> Can Add Name
+                        <Shield className="w-3 h-3" /> Can Add Name SR .NO 
                       </>
                     ) : (
                       <>
