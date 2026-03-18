@@ -1,20 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import {
-  User,
-  initializeStorage,
-  getUserByPhone,
-  addUser as storageAddUser,
-  setCurrentUser,
-  getCurrentUser,
-  logout as storageLogout,
-} from "@/lib/storage";
-import { useToast } from "@/hooks/use-toast";
+
+export interface AuthUser {
+  mobileNumber: string;
+  role: string;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
-  login: (phone: string, password: string) => { success: boolean; pending?: boolean };
-  register: (name: string, phone: string, password: string) => { success: boolean };
+  login: (userData: AuthUser, token: string) => void;
   logout: () => void;
   refreshUser: () => void;
 }
@@ -22,75 +16,67 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
-    initializeStorage();
-    const current = getCurrentUser();
-    if (current) {
-      // Refresh from storage to get latest data
-      const fresh = getUserByPhone(current.phone);
-      if (fresh) {
-        setUser(fresh);
-        setCurrentUser(fresh);
+    const savedUser = localStorage.getItem("star_current_user");
+    const savedToken = localStorage.getItem("token");
+
+    if (savedUser && savedToken) {
+      try {
+        const parsedUser: AuthUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Failed to parse saved user:", error);
+        localStorage.removeItem("star_current_user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
       }
     }
+
     setLoading(false);
   }, []);
 
+  const login = useCallback((userData: AuthUser, token: string) => {
+    const normalizedUser: AuthUser = {
+      mobileNumber: userData.mobileNumber,
+      role: userData.role.toUpperCase(),
+    };
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", normalizedUser.role);
+    localStorage.setItem("star_current_user", JSON.stringify(normalizedUser));
+
+    setUser(normalizedUser);
+  }, []);
+
   const refreshUser = useCallback(() => {
-    const current = getCurrentUser();
-    if (current) {
-      const fresh = getUserByPhone(current.phone);
-      if (fresh) {
-        setUser(fresh);
-        setCurrentUser(fresh);
+    const savedUser = localStorage.getItem("star_current_user");
+    const savedToken = localStorage.getItem("token");
+
+    if (savedUser && savedToken) {
+      try {
+        const parsedUser: AuthUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Failed to refresh user:", error);
+        setUser(null);
       }
+    } else {
+      setUser(null);
     }
   }, []);
 
-  const login = (phone: string, password: string) => {
-    const found = getUserByPhone(phone);
-    if (!found) {
-      toast({ title: "Error", description: "User not found. Please register first.", variant: "destructive" });
-      return { success: false };
-    }
-    if (found.password !== password) {
-      toast({ title: "Error", description: "Invalid password.", variant: "destructive" });
-      return { success: false };
-    }
-    if (found.status === "pending") {
-      return { success: false, pending: true };
-    }
-    if (found.status === "rejected") {
-      toast({ title: "Error", description: "Your account has been rejected.", variant: "destructive" });
-      return { success: false };
-    }
-    setUser(found);
-    setCurrentUser(found);
-    return { success: true };
-  };
-
-  const register = (name: string, phone: string, password: string) => {
-    const existing = getUserByPhone(phone);
-    if (existing) {
-      toast({ title: "Error", description: "Phone number already registered.", variant: "destructive" });
-      return { success: false };
-    }
-    storageAddUser({ name, phone, password, role: "user", status: "pending", balance: 0 });
-    toast({ title: "Success", description: "Registration successful! Please wait for admin approval." });
-    return { success: true };
-  };
-
-  const handleLogout = () => {
-    storageLogout();
+  const logout = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("star_current_user");
     setUser(null);
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout: handleLogout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
@@ -98,6 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = (): AuthContextType => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  if (!ctx) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
   return ctx;
 };
