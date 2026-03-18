@@ -1,8 +1,20 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { getCurrentUser } from "@/lib/gameApi";
 
 export interface AuthUser {
+  id: number;
+  name: string;
+  balance: number;
   mobileNumber: string;
   role: string;
+  status?: string;
+  canAddPlayerName?: boolean;
 }
 
 interface AuthContextType {
@@ -10,39 +22,63 @@ interface AuthContextType {
   loading: boolean;
   login: (userData: AuthUser, token: string) => void;
   logout: () => void;
-  refreshUser: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem("star_current_user");
-    const savedToken = localStorage.getItem("token");
+  const normalizeUser = (userData: AuthUser): AuthUser => {
+    return {
+      id: Number(userData.id),
+      name: userData.name || "",
+      mobileNumber: userData.mobileNumber,
+      role: userData.role?.toUpperCase() || "USER",
+      balance: Number(userData.balance ?? 0),
+      status: userData.status,
+      canAddPlayerName: userData.canAddPlayerName ?? false,
+    };
+  };
 
-    if (savedUser && savedToken) {
-      try {
-        const parsedUser: AuthUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Failed to parse saved user:", error);
-        localStorage.removeItem("star_current_user");
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-      }
+  const loadCurrentUser = useCallback(async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    try {
+      const currentUser = await getCurrentUser(token);
+      const normalizedUser = normalizeUser(currentUser);
+
+      localStorage.setItem("role", normalizedUser.role);
+      localStorage.setItem("star_current_user", JSON.stringify(normalizedUser));
+
+      setUser(normalizedUser);
+    } catch (error) {
+      console.error("Failed to load current user:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("star_current_user");
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    loadCurrentUser();
+  }, [loadCurrentUser]);
+
   const login = useCallback((userData: AuthUser, token: string) => {
-    const normalizedUser: AuthUser = {
-      mobileNumber: userData.mobileNumber,
-      role: userData.role.toUpperCase(),
-    };
+    const normalizedUser = normalizeUser(userData);
 
     localStorage.setItem("token", token);
     localStorage.setItem("role", normalizedUser.role);
@@ -51,19 +87,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(normalizedUser);
   }, []);
 
-  const refreshUser = useCallback(() => {
-    const savedUser = localStorage.getItem("star_current_user");
-    const savedToken = localStorage.getItem("token");
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem("token");
 
-    if (savedUser && savedToken) {
-      try {
-        const parsedUser: AuthUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Failed to refresh user:", error);
-        setUser(null);
-      }
-    } else {
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    try {
+      const currentUser = await getCurrentUser(token);
+      const normalizedUser = normalizeUser(currentUser);
+
+      localStorage.setItem("role", normalizedUser.role);
+      localStorage.setItem("star_current_user", JSON.stringify(normalizedUser));
+
+      setUser(normalizedUser);
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("star_current_user");
       setUser(null);
     }
   }, []);

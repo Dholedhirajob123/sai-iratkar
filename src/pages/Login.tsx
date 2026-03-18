@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Star, Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { loginUser, getCurrentUser } from "@/lib/gameApi";
 
 const Login = () => {
   const [phone, setPhone] = useState("");
@@ -38,32 +39,12 @@ const Login = () => {
     try {
       setLoading(true);
 
-      const response = await fetch("http://localhost:5003/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          mobileNumber: phone,
-          password: password,
-        }),
+      const data = await loginUser({
+        mobileNumber: phone,
+        password: password,
       });
 
-      if (!response.ok) {
-        const message = await response.text();
-        toast({
-          title: "Login Failed",
-          description: message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const data = await response.json();
-
-      const role = String(data.role || "").toUpperCase();
-
-      if (!role || !data.token) {
+      if (!data?.token) {
         toast({
           title: "Login Failed",
           description: "Invalid login response from server.",
@@ -72,18 +53,25 @@ const Login = () => {
         return;
       }
 
-      login(
-        {
-          mobileNumber: phone,
-          role: role,
-        },
-        data.token
-      );
+      const user = await getCurrentUser(data.token);
+
+      if (!user) {
+        toast({
+          title: "Login Failed",
+          description: "Unable to fetch logged in user details.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      login(user, data.token);
 
       toast({
         title: "Login Successful",
         description: "Welcome back!",
       });
+
+      const role = String(user.role || data.role || "").toUpperCase();
 
       if (role === "ADMIN") {
         navigate("/admin", { replace: true });
@@ -92,11 +80,11 @@ const Login = () => {
       } else {
         navigate("/", { replace: true });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("LOGIN ERROR:", error);
       toast({
-        title: "Server Error",
-        description: "Unable to connect to server",
+        title: "Login Failed",
+        description: error?.message || "Unable to connect to server",
         variant: "destructive",
       });
     } finally {
@@ -161,7 +149,11 @@ const Login = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
