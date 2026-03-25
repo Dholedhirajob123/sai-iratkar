@@ -1,131 +1,237 @@
 import { useState, useEffect } from "react";
-import { getEntries, getUsers, GameEntry, User } from "@/lib/storage";
 import { Search } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
+import {
+  getAllGameEntries,
+  getAllTransactions,
+  GameEntry,
+  Transaction,
+} from "@/lib/gameApi";
 
 const AdminHistory = () => {
   const [entries, setEntries] = useState<GameEntry[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"entries" | "transactions">("entries");
 
+  // =========================
+  // FETCH DATA
+  // =========================
   useEffect(() => {
-    setEntries(getEntries().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-    setUsers(getUsers());
+    const fetchData = async () => {
+      try {
+        const [entriesData, transactionsData] = await Promise.all([
+          getAllGameEntries(),
+          getAllTransactions(),
+        ]);
+
+        setEntries(
+          entriesData.sort(
+            (a, b) =>
+              new Date(b.createdAt || "").getTime() -
+              new Date(a.createdAt || "").getTime()
+          )
+        );
+
+        setTransactions(
+          transactionsData.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() -
+              new Date(a.createdAt).getTime()
+          )
+        );
+      } catch (err) {
+        console.error("Error loading history:", err);
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const getUserName = (userId: string) => users.find(u => u.id === userId)?.name || "Unknown";
+  // =========================
+  // FILTERS
+  // =========================
+  const filteredEntries = entries.filter((e) => {
+    const text =
+      (e.playerName || "") +
+      (e.gameName || "") +
+      (e.gameType || "");
 
-  const filteredEntries = entries.filter(entry => {
-    const playerName = entry.playerName || "";
-    const addedBy = getUserName(entry.userId) || "";
-    const gameName = entry.gameName || "";
-    const gameType = entry.gameType || "";
-    
-    const matchesSearch = playerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           addedBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           gameName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           gameType.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    return matchesSearch;
+    return text.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // Group by Added By (User who placed the bet) instead of Player Name
-  const groupedByAddedBy: Record<string, GameEntry[]> = {};
-  filteredEntries.forEach(e => {
-    const key = getUserName(e.userId); // Group by the user who added the bet
-    if (!groupedByAddedBy[key]) groupedByAddedBy[key] = [];
-    groupedByAddedBy[key].push(e);
+  const filteredTransactions = transactions.filter((t: any) => {
+    const text =
+      (t.user?.name || "") +
+      (t.type || "");
+
+    return text.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  // =========================
+  // GROUP BY USER
+  // =========================
+  const grouped: Record<string, GameEntry[]> = {};
+
+  entries.forEach((e: any) => {
+    const userName = e.user?.name || "Unknown";
+    if (!grouped[userName]) grouped[userName] = [];
+    grouped[userName].push(e);
   });
 
   return (
     <div>
+      {/* ========================= */}
+      {/* BUTTONS + SEARCH */}
+      {/* ========================= */}
       <div className="mb-4 space-y-3">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("entries")}
+            className={`px-4 py-2 rounded text-sm ${
+              activeTab === "entries"
+                ? "bg-primary text-white"
+                : "bg-muted"
+            }`}
+          >
+            Game History
+          </button>
+
+          <button
+            onClick={() => setActiveTab("transactions")}
+            className={`px-4 py-2 rounded text-sm ${
+              activeTab === "transactions"
+                ? "bg-primary text-white"
+                : "bg-muted"
+            }`}
+          >
+            Transactions
+          </button>
+        </div>
+
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search history..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-input border-2 border-foreground/10 pl-10 pr-4 py-2 text-sm font-mono"
+            className="w-full pl-10 pr-4 py-2 border text-sm"
           />
         </div>
       </div>
-      
-      {filteredEntries.length === 0 ? (
-        <p className="text-center text-muted-foreground py-10">No history found</p>
-      ) : (
-        <Accordion type="multiple" className="space-y-2">
-          {Object.entries(groupedByAddedBy).map(([addedBy, userEntries]) => {
-            const totalBet = userEntries.reduce((s, e) => s + e.amount, 0);
-            const uniquePlayers = new Set(userEntries.map(e => e.playerName)).size;
-            
-            return (
-              <AccordionItem key={addedBy} value={addedBy} className="surface-card">
-                <AccordionTrigger className="px-4 py-3 font-mono text-sm">
-                  <div className="flex justify-between w-full pr-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-primary font-bold">Added By:</span>
-                      <span>{addedBy}</span>
-                      <span className="text-xs bg-accent px-2 py-0.5 rounded">
-                        {uniquePlayers} player{uniquePlayers > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                    <span className="text-xs">{userEntries.length} bets · ₹{totalBet}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-[10px] py-2 px-2">Sr.No</th>
-                        <th className="text-[10px] py-2 px-2">Player Name</th>
-                        <th className="text-[10px] py-2 px-2">Number</th>
-                        <th className="text-[10px] py-2 px-2">Game</th>
-                        <th className="text-[10px] py-2 px-2">Type</th>
-                        <th className="text-[10px] py-2 px-2">Amount</th>
-                        <th className="text-[10px] py-2 px-2">Result</th>
-                        <th className="text-[10px] py-2 px-2">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userEntries.map((e, index) => (
-                        <tr key={e.id} className="border-b hover:bg-accent/5">
-                          <td className="py-2 px-2 text-xs">{index + 1}</td>
-                          <td className="py-2 px-2 text-xs text-primary font-semibold">{e.playerName}</td>
-                          <td className="py-2 px-2 text-xs font-bold">{e.number}</td>
-                          <td className="py-2 px-2 text-xs">{e.gameName}</td>
-                          <td className="py-2 px-2 text-xs text-muted-foreground">{e.gameType}</td>
-                          <td className="py-2 px-2 text-xs font-semibold">₹{e.amount}</td>
-                          <td className="py-2 px-2">
-                            {e.result ? (
-                              <span className={`text-[10px] font-bold px-2 py-1 rounded ${
-                                e.result === "won" 
-                                  ? "text-success bg-success/10 border border-success/30" 
-                                  : "text-destructive bg-destructive/10 border border-destructive/30"
-                              }`}>
-                                {e.result === "won" ? `WON ₹${e.winAmount}` : "LOST"}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] text-muted-foreground">Pending</span>
-                            )}
-                          </td>
-                          <td className="py-2 px-2 text-[10px] text-muted-foreground">
-                            {new Date(e.createdAt).toLocaleDateString("en-IN", { 
-                              day: "2-digit", 
-                              month: "2-digit", 
-                              year: "numeric" 
-                            })}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </AccordionContent>
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
+
+      {/* ========================= */}
+      {/* GAME HISTORY */}
+      {/* ========================= */}
+      {activeTab === "entries" && (
+        <>
+          {filteredEntries.length === 0 ? (
+            <p className="text-center py-10 text-muted-foreground">
+              No history found
+            </p>
+          ) : (
+            <Accordion type="multiple">
+              {Object.entries(grouped).map(([user, list]) => {
+                const total = list.reduce((s, e) => s + e.amount, 0);
+
+                return (
+                  <AccordionItem key={user} value={user}>
+                    <AccordionTrigger>
+                      <div className="flex justify-between w-full pr-4">
+                        <span>{user}</span>
+                        <span>
+                          {list.length} bets · ₹{total}
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+
+                    <AccordionContent>
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr>
+                            <th>Player</th>
+                            <th>No</th>
+                            <th>Game</th>
+                            <th>Amt</th>
+                            <th>Result</th>
+                            <th>Date</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {list.map((e) => (
+                            <tr key={e.id}>
+                              <td>{e.playerName}</td>
+                              <td>{e.number}</td>
+                              <td>{e.gameName}</td>
+                              <td>₹{e.amount}</td>
+                              <td>
+                                {e.result
+                                  ? e.result === "won"
+                                    ? `WON ₹${e.winAmount}`
+                                    : "LOST"
+                                  : "Pending"}
+                              </td>
+                              <td>
+                                {new Date(
+                                  e.createdAt || ""
+                                ).toLocaleDateString("en-IN")}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          )}
+        </>
+      )}
+
+      {/* ========================= */}
+      {/* TRANSACTIONS */}
+      {/* ========================= */}
+      {activeTab === "transactions" && (
+        <>
+          {filteredTransactions.length === 0 ? (
+            <p className="text-center py-10 text-muted-foreground">
+              No transactions found
+            </p>
+          ) : (
+            <table className="w-full text-left">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredTransactions.map((t: any) => (
+                  <tr key={t.id}>
+                    <td>{t.user?.name || "Unknown"}</td>
+                    <td>{t.type}</td>
+                    <td>₹{t.amount}</td>
+                    <td>
+                      {new Date(t.createdAt).toLocaleDateString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
       )}
     </div>
   );
