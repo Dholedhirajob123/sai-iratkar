@@ -26,7 +26,8 @@ const AdminResults = () => {
 
       const sortedResults = [...resultsData].sort(
         (a, b) =>
-          new Date(b.declaredAt).getTime() - new Date(a.declaredAt).getTime()
+          new Date(b.declaredAt).getTime() -
+          new Date(a.declaredAt).getTime()
       );
 
       setResults(sortedResults);
@@ -47,14 +48,16 @@ const AdminResults = () => {
     return results.filter((result) => {
       const gameName = result.gameName || "";
       const gameType = result.gameType || "";
-      const winningNumber = result.winningNumber || "";
+
+      const displayNumber = `${result.leftNumber || "-"} ${result.centerNumber || "-"} ${result.rightNumber || "-"}`;
 
       const matchesSearch =
         gameName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         gameType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        winningNumber.includes(searchQuery);
+        displayNumber.includes(searchQuery);
 
-      const resultGameId = result.gameId?.toString();
+      const resultGameId = result.game?.id?.toString();
+
       const matchesGame =
         selectedGame === "all" || resultGameId === selectedGame;
 
@@ -141,8 +144,11 @@ const AdminResults = () => {
                       {result.gameType}
                     </p>
 
+                    {/* ✅ UPDATED NUMBER DISPLAY */}
                     <p className="text-sm font-mono font-bold text-primary mt-1">
-                      #{result.winningNumber}
+                      {result.leftNumber || "-"}{" "}
+                      {result.centerNumber || "-"}{" "}
+                      {result.rightNumber || "-"}
                     </p>
 
                     <p className="text-[10px] font-mono text-muted-foreground mt-1">
@@ -156,7 +162,6 @@ const AdminResults = () => {
 
                     <p className="text-[10px] font-mono text-muted-foreground mt-1">
                       {result.timeType?.toUpperCase()}
-                      {result.leftNumberFlag ? " | LEFT NUMBER" : ""}
                     </p>
                   </div>
                 ))}

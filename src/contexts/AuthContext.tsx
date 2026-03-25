@@ -23,6 +23,7 @@ interface AuthContextType {
   login: (userData: AuthUser, token: string) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  updateBalance: (amount: number, type: "add" | "subtract") => void; // 🔥 NEW
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -64,9 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(normalizedUser);
     } catch (error) {
       console.error("Failed to load current user:", error);
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("star_current_user");
+      localStorage.clear();
       setUser(null);
     } finally {
       setLoading(false);
@@ -87,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(normalizedUser);
   }, []);
 
+  // 🔥 REFRESH FROM BACKEND
   const refreshUser = useCallback(async () => {
     const token = localStorage.getItem("token");
 
@@ -105,22 +105,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(normalizedUser);
     } catch (error) {
       console.error("Failed to refresh user:", error);
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("star_current_user");
+      localStorage.clear();
       setUser(null);
     }
   }, []);
 
+  // 🔥 INSTANT UI UPDATE (IMPORTANT)
+  const updateBalance = useCallback(
+    (amount: number, type: "add" | "subtract") => {
+      setUser((prev) => {
+        if (!prev) return prev;
+
+        const newBalance =
+          type === "add"
+            ? prev.balance + amount
+            : prev.balance - amount;
+
+        const updatedUser = { ...prev, balance: newBalance };
+
+        localStorage.setItem("star_current_user", JSON.stringify(updatedUser));
+
+        return updatedUser;
+      });
+    },
+    []
+  );
+
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("star_current_user");
+    localStorage.clear();
     setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, logout, refreshUser, updateBalance }}
+    >
       {children}
     </AuthContext.Provider>
   );

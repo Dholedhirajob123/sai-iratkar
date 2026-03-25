@@ -3,7 +3,6 @@ import { X, Trash2, User, Hash } from "lucide-react";
 import { Game, getUserById } from "@/lib/gameApi";
 import { useToast } from "@/hooks/use-toast";
 
-// Game types for OPEN time
 const OPEN_GAME_TYPES = [
   "SINGLE",
   "JODI",
@@ -13,7 +12,6 @@ const OPEN_GAME_TYPES = [
   "SP-DP-TP",
 ];
 
-// Game types for CLOSE time
 const CLOSE_GAME_TYPES = [
   "SINGLE",
   "SINGLE PANA",
@@ -107,7 +105,7 @@ interface GameTypeSelectorProps {
   game: Game;
   playType: "open" | "close";
   onClose: () => void;
-  onSubmit: (entries: PendingEntry[]) => void;
+  onSubmit: (entries: PendingEntry[]) => Promise<void> | void;
   userBalance: number;
   userId: number;
 }
@@ -173,9 +171,19 @@ const GameTypeSelector = ({
     return playType === "open" ? OPEN_GAME_TYPES : CLOSE_GAME_TYPES;
   };
 
-  const isValidSinglePana = (num: string): boolean => SINGLE_PANA_NUMBERS.includes(num);
-  const isValidDoublePana = (num: string): boolean => DOUBLE_PANA_NUMBERS.includes(num);
-  const isValidTriplePatti = (num: string): boolean => TRIPLE_PATTI_NUMBERS.includes(num);
+  const isValidSinglePana = (num: string): boolean =>
+    SINGLE_PANA_NUMBERS.includes(num);
+
+  const isValidDoublePana = (num: string): boolean =>
+    DOUBLE_PANA_NUMBERS.includes(num);
+
+  const isValidTriplePatti = (num: string): boolean =>
+    TRIPLE_PATTI_NUMBERS.includes(num);
+
+  const resetEntryFields = () => {
+    setSelectedNumber("");
+    setAmount("");
+  };
 
   const handleAddEntry = () => {
     if (canAddPlayerName && !playerName.trim()) {
@@ -205,6 +213,7 @@ const GameTypeSelector = ({
         });
         return;
       }
+
       if (!inputDigit || inputDigit.length !== 1) {
         toast({
           title: "Error",
@@ -213,6 +222,7 @@ const GameTypeSelector = ({
         });
         return;
       }
+
       if (!selectedNumber) {
         toast({
           title: "Error",
@@ -260,7 +270,7 @@ const GameTypeSelector = ({
       }
     }
 
-    const amt = parseInt(amount);
+    const amt = parseInt(amount, 10);
 
     if (!amt || amt <= 0) {
       toast({
@@ -272,10 +282,11 @@ const GameTypeSelector = ({
     }
 
     const finalPlayerName = canAddPlayerName ? playerName.trim() : userName;
-    const gameTypeToStore = selectedType === "SP-DP-TP" ? selectedSPDPTP : selectedType;
+    const gameTypeToStore =
+      selectedType === "SP-DP-TP" ? selectedSPDPTP : selectedType;
 
-    setEntries([
-      ...entries,
+    setEntries((prev) => [
+      ...prev,
       {
         gameType: gameTypeToStore,
         number: selectedNumber,
@@ -284,12 +295,12 @@ const GameTypeSelector = ({
       },
     ]);
 
-    setSelectedNumber("");
-    setAmount("");
+    const addedNumber = selectedNumber;
+    resetEntryFields();
 
     toast({
       title: "Added",
-      description: `${gameTypeToStore} - ${selectedNumber} @ ₹${amt} for ${finalPlayerName}`,
+      description: `${gameTypeToStore} - ${addedNumber} @ ₹${amt} for ${finalPlayerName}`,
     });
   };
 
@@ -339,7 +350,7 @@ const GameTypeSelector = ({
       return;
     }
 
-    const amt = parseInt(amount);
+    const amt = parseInt(amount, 10);
 
     if (!amt || amt <= 0) {
       toast({
@@ -359,9 +370,8 @@ const GameTypeSelector = ({
       playerName: finalPlayerName,
     }));
 
-    setEntries([...entries, ...newEntries]);
-    setAmount("");
-    setSelectedNumber("");
+    setEntries((prev) => [...prev, ...newEntries]);
+    resetEntryFields();
 
     toast({
       title: "Added",
@@ -370,10 +380,10 @@ const GameTypeSelector = ({
   };
 
   const removeEntry = (idx: number) => {
-    setEntries(entries.filter((_, i) => i !== idx));
+    setEntries((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (entries.length === 0) {
       toast({
         title: "Error",
@@ -402,11 +412,12 @@ const GameTypeSelector = ({
       return;
     }
 
-    setSubmitting(true);
-    setTimeout(() => {
-      onSubmit(entries);
+    try {
+      setSubmitting(true);
+      await onSubmit(entries);
+    } finally {
       setSubmitting(false);
-    }, 200);
+    }
   };
 
   const handleGameTypeClick = (type: string) => {
@@ -422,16 +433,28 @@ const GameTypeSelector = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+        onClick={() => {
+          if (!submitting) onClose();
+        }}
+      />
       <div className="relative w-full h-full bg-card flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b-2 border-foreground/10">
           <div>
-            <h3 className="font-mono font-bold text-sm text-foreground">{game.name}</h3>
+            <h3 className="font-mono font-bold text-sm text-foreground">
+              {game.name}
+            </h3>
             <p className="text-[10px] font-mono text-muted-foreground">
               Play {playType.toUpperCase()}
             </p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="text-muted-foreground hover:text-foreground disabled:opacity-50"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -465,21 +488,28 @@ const GameTypeSelector = ({
           ) : (
             <div className="surface-raised p-3 border-2 border-primary/20">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] font-mono text-muted-foreground">PLAYING AS</p>
+                <p className="text-[10px] font-mono text-muted-foreground">
+                  PLAYING AS
+                </p>
                 <div className="flex items-center gap-1 text-[10px] font-mono bg-accent/30 px-2 py-0.5 rounded">
                   <Hash className="w-3 h-3 text-primary" />
                   <span>Entry #{entries.length + 1}</span>
                 </div>
               </div>
-              <p className="text-sm font-mono font-bold text-primary">{userName}</p>
+              <p className="text-sm font-mono font-bold text-primary">
+                {userName}
+              </p>
             </div>
           )}
 
           <div>
-            <p className="text-[10px] font-mono text-muted-foreground mb-2">GAME TYPE</p>
+            <p className="text-[10px] font-mono text-muted-foreground mb-2">
+              GAME TYPE
+            </p>
             <div className="grid grid-cols-3 gap-2">
               {availableGameTypes.map((type) => (
                 <button
+                  type="button"
                   key={type}
                   onClick={() => handleGameTypeClick(type)}
                   className={`py-2 px-1 text-[10px] font-mono font-semibold border-2 ${
@@ -522,8 +552,9 @@ const GameTypeSelector = ({
                 />
               </div>
               <button
+                type="button"
                 onClick={handleAddEntry}
-                disabled={!selectedNumber || !amount}
+                disabled={!selectedNumber || !amount || submitting}
                 className="w-full bg-primary text-white py-3 font-mono text-sm font-semibold rounded hover:opacity-90 disabled:opacity-40"
               >
                 Add Entry
@@ -533,11 +564,14 @@ const GameTypeSelector = ({
 
           {selectedType === "SP-DP-TP" && (
             <div className="border-2 border-primary rounded-lg p-4 bg-primary/5">
-              <p className="text-xs font-mono font-bold text-primary mb-3">SP/DP/TP SELECTION</p>
+              <p className="text-xs font-mono font-bold text-primary mb-3">
+                SP/DP/TP SELECTION
+              </p>
 
               <div className="grid grid-cols-3 gap-2 mb-4">
                 {SP_DP_TP_OPTIONS.map((option) => (
                   <button
+                    type="button"
                     key={option}
                     onClick={() => {
                       setSelectedSPDPTP(option);
@@ -584,18 +618,29 @@ const GameTypeSelector = ({
                   <div className="border-2 border-foreground/10 rounded-lg overflow-hidden">
                     <table className="w-full">
                       <tbody>
-                        {Array.from({ length: Math.ceil(availableNumbers.length / 4) }).map((_, rowIndex) => (
-                          <tr key={rowIndex} className="border-t border-foreground/10">
+                        {Array.from({
+                          length: Math.ceil(availableNumbers.length / 4),
+                        }).map((_, rowIndex) => (
+                          <tr
+                            key={rowIndex}
+                            className="border-t border-foreground/10"
+                          >
                             {[0, 1, 2, 3].map((colIndex) => {
                               const numIndex = rowIndex * 4 + colIndex;
                               const num = availableNumbers[numIndex];
                               return (
-                                <td key={colIndex} className="p-1 border-r border-foreground/10 last:border-r-0">
+                                <td
+                                  key={colIndex}
+                                  className="p-1 border-r border-foreground/10 last:border-r-0"
+                                >
                                   {num && (
                                     <button
+                                      type="button"
                                       onClick={() => setSelectedNumber(num)}
                                       className={`w-full py-1 px-1 text-xs font-mono rounded ${
-                                        selectedNumber === num ? "bg-primary text-white" : "hover:bg-accent/20"
+                                        selectedNumber === num
+                                          ? "bg-primary text-white"
+                                          : "hover:bg-accent/20"
                                       }`}
                                     >
                                       {num}
@@ -631,16 +676,20 @@ const GameTypeSelector = ({
                     <div className="flex gap-2">
                       {selectedNumber && (
                         <button
+                          type="button"
                           onClick={handleAddEntry}
-                          className="flex-1 bg-primary text-white py-2 font-mono text-xs rounded hover:opacity-90"
+                          disabled={submitting}
+                          className="flex-1 bg-primary text-white py-2 font-mono text-xs rounded hover:opacity-90 disabled:opacity-40"
                         >
                           Add {selectedNumber} @ ₹{amount}
                         </button>
                       )}
 
                       <button
+                        type="button"
                         onClick={handleAddAllNumbers}
-                        className="flex-1 border-2 border-primary text-primary py-2 font-mono text-xs rounded hover:bg-primary/10"
+                        disabled={submitting}
+                        className="flex-1 border-2 border-primary text-primary py-2 font-mono text-xs rounded hover:bg-primary/10 disabled:opacity-40"
                       >
                         Add All {availableNumbers.length} Numbers
                       </button>
@@ -649,7 +698,7 @@ const GameTypeSelector = ({
 
                   {amount && (
                     <p className="text-xs font-mono text-center text-primary">
-                      Total (All): ₹{parseInt(amount || "0") * availableNumbers.length}
+                      Total (All): ₹{parseInt(amount || "0", 10) * availableNumbers.length}
                     </p>
                   )}
                 </div>
@@ -660,7 +709,9 @@ const GameTypeSelector = ({
           {entries.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] font-mono text-muted-foreground">PENDING ENTRIES</p>
+                <p className="text-[10px] font-mono text-muted-foreground">
+                  PENDING ENTRIES
+                </p>
                 <div className="flex items-center gap-1 text-[10px] font-mono bg-primary/10 text-primary px-2 py-0.5 rounded">
                   <Hash className="w-3 h-3" />
                   <span>{entries.length}</span>
@@ -674,13 +725,19 @@ const GameTypeSelector = ({
                   >
                     <div>
                       <p className="text-xs font-mono">
-                        <span className="text-primary font-bold">#{i + 1}</span> {e.gameType} - {e.number}
+                        <span className="text-primary font-bold">#{i + 1}</span>{" "}
+                        {e.gameType} - {e.number}
                       </p>
                       <p className="text-[10px] font-mono text-muted-foreground">
                         {e.playerName} | ₹{e.amount}
                       </p>
                     </div>
-                    <button onClick={() => removeEntry(i)} className="text-destructive">
+                    <button
+                      type="button"
+                      onClick={() => removeEntry(i)}
+                      disabled={submitting}
+                      className="text-destructive disabled:opacity-40"
+                    >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -688,22 +745,30 @@ const GameTypeSelector = ({
               </div>
               <div className="flex justify-between mt-3 pt-2 border-t">
                 <span className="text-xs font-mono">Total:</span>
-                <span className="text-sm font-mono font-bold text-primary">₹{totalAmount}</span>
+                <span className="text-sm font-mono font-bold text-primary">
+                  ₹{totalAmount}
+                </span>
               </div>
             </div>
           )}
         </div>
 
         <div className="flex border-t-2">
-          <button onClick={onClose} className="flex-1 py-3 font-mono text-xs text-muted-foreground">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className="flex-1 py-3 font-mono text-xs text-muted-foreground disabled:opacity-50"
+          >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={entries.length === 0 || submitting}
             className="flex-1 py-3 font-mono text-xs bg-primary text-white disabled:opacity-50"
           >
-            Submit ({entries.length})
+            {submitting ? "Submitting..." : `Submit (${entries.length})`}
           </button>
         </div>
 

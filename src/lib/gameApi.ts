@@ -57,34 +57,42 @@ export interface GameEntry {
 }
 
 export interface GameResult {
-  id: number;
+  leftNumber: string;
+  centerNumber: string;
+  rightNumber: string;
+  game: any;
+  id?: number;
   gameId?: number;
   gameName: string;
   gameType: string;
   winningNumber: string;
-  declaredAt: string;
+  declaredAt?: string;
   declaredBy?: string;
-  totalWinners: number;
-  totalPayout: number;
+  totalWinners?: number;
+  totalPayout?: number;
   timeType: "open" | "close";
   leftNumberFlag?: boolean;
 }
 
 export interface LeftNumberEntry {
-  id: number;
+  id?: number;
   gameId?: number;
-  gameName: string;
+  gameName?: string;
   number: string;
   addedBy?: string;
-  addedAt: string;
+  addedAt?: string;
   result?: "won" | "lost" | "pending";
   declaredAt?: string;
   declaredBy?: string;
+  game?: {
+    id: number;
+  };
 }
 
 export interface LoginResponse {
   token: string;
   user: User;
+  id: number;
 }
 
 const BASE_URL = "http://localhost:5003";
@@ -121,8 +129,8 @@ const handleResponse = async (response: Response) => {
 export const loginUser = async (payload: {
   mobileNumber: string;
   password: string;
-}) => {
-  const response = await fetch("http://localhost:5003/auth/login", {
+}): Promise<LoginResponse> => {
+  const response = await fetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -139,8 +147,8 @@ export const loginUser = async (payload: {
   return data;
 };
 
-export const getCurrentUser = async (token: string) => {
-  const response = await fetch("http://localhost:5003/auth/me", {
+export const getCurrentUser = async (token: string): Promise<User> => {
+  const response = await fetch(`${BASE_URL}/auth/me`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -189,7 +197,10 @@ export const createGame = async (game: Partial<Game>): Promise<Game> => {
   return handleResponse(response);
 };
 
-export const updateGame = async (id: number, game: Partial<Game>): Promise<Game> => {
+export const updateGame = async (
+  id: number,
+  game: Partial<Game>
+): Promise<Game> => {
   const response = await fetch(`${BASE_URL}/games/${id}`, {
     method: "PUT",
     headers: getHeaders(true),
@@ -214,6 +225,16 @@ export const toggleGameStatus = async (id: number): Promise<Game> => {
   return handleResponse(response);
 };
 
+export const searchGames = async (name: string): Promise<Game[]> => {
+  const response = await fetch(
+    `${BASE_URL}/games/search?name=${encodeURIComponent(name)}`,
+    {
+      headers: getHeaders(),
+    }
+  );
+  return handleResponse(response);
+};
+
 // ==================== USERS ====================
 
 export const getUserById = async (id: number): Promise<User> => {
@@ -234,7 +255,9 @@ export const addGameEntry = async (entry: GameEntry): Promise<GameEntry> => {
   return handleResponse(response);
 };
 
-export const addBulkGameEntries = async (entries: GameEntry[]): Promise<GameEntry[]> => {
+export const addBulkGameEntries = async (
+  entries: GameEntry[]
+): Promise<GameEntry[]> => {
   const response = await fetch(`${BASE_URL}/game-entries/bulk`, {
     method: "POST",
     headers: getHeaders(true),
@@ -243,14 +266,32 @@ export const addBulkGameEntries = async (entries: GameEntry[]): Promise<GameEntr
   return handleResponse(response);
 };
 
-export const getEntriesByUserId = async (userId: number): Promise<GameEntry[]> => {
+export const getAllGameEntries = async (): Promise<GameEntry[]> => {
+  const response = await fetch(`${BASE_URL}/game-entries`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
+};
+
+export const getEntryById = async (entryId: number): Promise<GameEntry> => {
+  const response = await fetch(`${BASE_URL}/game-entries/${entryId}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
+};
+
+export const getEntriesByUserId = async (
+  userId: number
+): Promise<GameEntry[]> => {
   const response = await fetch(`${BASE_URL}/game-entries/user/${userId}`, {
     headers: getHeaders(),
   });
   return handleResponse(response);
 };
 
-export const getEntriesByGameId = async (gameId: number): Promise<GameEntry[]> => {
+export const getEntriesByGameId = async (
+  gameId: number
+): Promise<GameEntry[]> => {
   const response = await fetch(`${BASE_URL}/game-entries/game/${gameId}`, {
     headers: getHeaders(),
   });
@@ -260,21 +301,35 @@ export const getEntriesByGameId = async (gameId: number): Promise<GameEntry[]> =
 // ==================== LEFT NUMBERS ====================
 
 export const addLeftNumber = async (
-  gameId: number,
-  number: string,
-  adminId: number
+  payload: LeftNumberEntry
 ): Promise<LeftNumberEntry> => {
-  const response = await fetch(
-    `${BASE_URL}/left-numbers/add?gameId=${gameId}&number=${encodeURIComponent(number)}&adminId=${adminId}`,
-    {
-      method: "POST",
-      headers: getHeaders(),
-    }
-  );
+  const response = await fetch(`${BASE_URL}/left-numbers`, {
+    method: "POST",
+    headers: getHeaders(true),
+    body: JSON.stringify(payload),
+  });
   return handleResponse(response);
 };
 
-export const getLeftNumbersByGame = async (gameId: number): Promise<LeftNumberEntry[]> => {
+export const getAllLeftNumbers = async (): Promise<LeftNumberEntry[]> => {
+  const response = await fetch(`${BASE_URL}/left-numbers`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
+};
+
+export const getLeftNumberById = async (
+  id: number
+): Promise<LeftNumberEntry> => {
+  const response = await fetch(`${BASE_URL}/left-numbers/${id}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
+};
+
+export const getLeftNumbersByGame = async (
+  gameId: number
+): Promise<LeftNumberEntry[]> => {
   const response = await fetch(`${BASE_URL}/left-numbers/game/${gameId}`, {
     headers: getHeaders(),
   });
@@ -283,16 +338,10 @@ export const getLeftNumbersByGame = async (gameId: number): Promise<LeftNumberEn
 
 // ==================== RESULTS ====================
 
-export const declareResult = async (payload: {
-  gameId: number;
-  gameName: string;
-  gameType: string;
-  winningNumber: string;
-  adminId: number;
-  timeType: "open" | "close";
-  leftNumberFlag?: boolean;
-}): Promise<GameResult> => {
-  const response = await fetch(`${BASE_URL}/results/declare`, {
+export const declareResult = async (
+  payload: GameResult
+): Promise<GameResult> => {
+  const response = await fetch(`${BASE_URL}/game-results`, {
     method: "POST",
     headers: getHeaders(true),
     body: JSON.stringify(payload),
@@ -307,9 +356,54 @@ export const getResults = async (): Promise<GameResult[]> => {
   return handleResponse(response);
 };
 
+export const getResultById = async (resultId: number): Promise<GameResult> => {
+  const response = await fetch(`${BASE_URL}/game-results/${resultId}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
+};
+
+export const getResultsByGameId = async (
+  gameId: number
+): Promise<GameResult[]> => {
+  const response = await fetch(`${BASE_URL}/game-results/game/${gameId}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
+};
+
 // ==================== TRANSACTIONS ====================
 
-export const getUserTransactions = async (userId: number): Promise<Transaction[]> => {
+export const addTransaction = async (
+  payload: Partial<Transaction>
+): Promise<Transaction> => {
+  const response = await fetch(`${BASE_URL}/transactions`, {
+    method: "POST",
+    headers: getHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+};
+
+export const getAllTransactions = async (): Promise<Transaction[]> => {
+  const response = await fetch(`${BASE_URL}/transactions`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
+};
+
+export const getTransactionById = async (
+  transactionId: number
+): Promise<Transaction> => {
+  const response = await fetch(`${BASE_URL}/transactions/${transactionId}`, {
+    headers: getHeaders(),
+  });
+  return handleResponse(response);
+};
+
+export const getUserTransactions = async (
+  userId: number
+): Promise<Transaction[]> => {
   const response = await fetch(`${BASE_URL}/transactions/user/${userId}`, {
     headers: getHeaders(),
   });

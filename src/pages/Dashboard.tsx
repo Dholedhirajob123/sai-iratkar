@@ -25,13 +25,38 @@ import { useToast } from "@/hooks/use-toast";
 import GameCard from "@/components/GameCard";
 import GameTypeSelector from "@/components/GameTypeSelector";
 import BottomNav from "@/components/BottomNav";
+const getTodayDateTime = (time: string): Date => {
+  const now = new Date();
+  const [hours, minutes] = time.split(":").map(Number);
 
+  const date = new Date(now);
+  date.setHours(hours, minutes, 0, 0);
+
+  return date;
+};
+
+const canPlayGame = (game: Game, playType: "open" | "close") => {
+  const now = new Date();
+  const openDate = getTodayDateTime(game.openTime);
+  const closeDate = getTodayDateTime(game.closeTime);
+
+  if (playType === "open") {
+    return now < openDate; // ✅ play anytime before openTime
+  }
+
+  if (playType === "close") {
+    return now < closeDate; // ✅ play anytime before closeTime
+  }
+
+  return false;
+};
 const Dashboard = () => {
   const { user, loading, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [games, setGames] = useState<Game[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedGame, setSelectedGame] = useState<{
     game: Game;
@@ -52,15 +77,15 @@ const Dashboard = () => {
 
       if (user.role === "ADMIN") {
         navigate("/admin", { replace: true });
-        return;
       }
     }
   }, [user, loading, navigate]);
 
   const loadGames = useCallback(async () => {
     try {
+      setGamesLoading(true);
       const allGames = await getGames();
-      setGames(allGames);
+      setGames(allGames || []);
       setCurrentTime(new Date());
     } catch (error) {
       console.error("Failed to load games:", error);
@@ -69,6 +94,8 @@ const Dashboard = () => {
         description: "Failed to load games.",
         variant: "destructive",
       });
+    } finally {
+      setGamesLoading(false);
     }
   }, [toast]);
 
@@ -76,7 +103,7 @@ const Dashboard = () => {
     if (user) {
       loadGames();
     }
-  }, [loadGames, user]);
+  }, [user, loadGames]);
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -84,70 +111,113 @@ const Dashboard = () => {
   }, []);
 
   const handleBetSubmit = async (
-    entries: { gameType: string; number: string; amount: number; playerName: string }[]
-  ) => {
-    if (!user || !selectedGame) return;
+  entries: {
+    gameType: string;
+    number: string;
+    amount: number;
+    playerName: string;
+  }[]
+) => {
+  if (!user || !selectedGame || submittingBet) return;
 
-    if (!selectedGame.game.isActive && !selectedGame.game.active) {
-      toast({
-        title: "Game Closed",
-        description: "This game is currently inactive.",
-        variant: "destructive",
-      });
-      setSelectedGame(null);
-      return;
-    }
+  const isGameActive =
+    selectedGame.game.isActive === true || selectedGame.game.active === true;
 
-    const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
+  if (!isGameActive) {
+    toast({
+      title: "Game Closed",
+      description: "This game is currently inactive.",
+      variant: "destructive",
+    });
+    setSelectedGame(null);
+    return;
+  }
 
-    if (user.balance < total) {
-      toast({
-        title: "Insufficient Balance",
-        description: `You need ₹${total}, but your balance is ₹${user.balance}.`,
-        variant: "destructive",
-      });
-      return;
-    }
+  const allowedToPlay = canPlayGame(
+    selectedGame.game,
+    selectedGame.playType
+  );
 
-    try {
-      setSubmittingBet(true);
+  if (!allowedToPlay) {
+    toast({
+      title: "Time Out",
+      description: `${selectedGame.playType.toUpperCase()} play is closed for this game.`,
+      variant: "destructive",
+    });
+    setSelectedGame(null);
+    return;
+  }
 
-      const payload: GameEntry[] = entries.map((entry) => ({
-        user: {
-          id: user.id,
-        },
-        game: {
-          id: selectedGame.game.id,
-        },
-        gameName: selectedGame.game.name,
-        playType: selectedGame.playType,
-        gameType: entry.gameType,
-        number: entry.number,
-        amount: entry.amount,
-        playerName: entry.playerName,
-        leftNumberFlag: false,
-      }));
+  if (!entries || entries.length === 0) {
+    toast({
+      title: "Invalid Entry",
+      description: "Please add at least one entry.",
+      variant: "destructive",
+    });
+    return;
+  }
 
-      await addBulkGameEntries(payload);
-      await refreshUser();
-      setSelectedGame(null);
+  const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
-      toast({
-        title: "Bets Placed",
-        description: `${entries.length} entr${entries.length > 1 ? "ies" : "y"} submitted successfully. Total ₹${total} deducted.`,
-      });
-    } catch (error: any) {
-      console.error("Failed to submit bets:", error);
-      toast({
-        title: "Bet Failed",
-        description:
-          error?.message || "Unable to submit entries. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmittingBet(false);
-    }
-  };
+  if (total <= 0) {
+    toast({
+      title: "Invalid Amount",
+      description: "Bet amount must be greater than zero.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  if (user.balance < total) {
+    toast({
+      title: "Insufficient Balance",
+      description: `You need ₹${total}, but your balance is ₹${user.balance}.`,
+      variant: "destructive",
+    });
+    return;
+  }
+
+  try {
+    setSubmittingBet(true);
+
+    const payload: GameEntry[] = entries.map((entry) => ({
+      user: {
+        id: user.id,
+      },
+      game: {
+        id: selectedGame.game.id,
+      },
+      gameName: selectedGame.game.name,
+      playType: selectedGame.playType,
+      gameType: entry.gameType,
+      number: entry.number,
+      amount: entry.amount,
+      playerName: entry.playerName,
+      leftNumberFlag: false,
+    }));
+
+    await addBulkGameEntries(payload);
+    await refreshUser();
+    setSelectedGame(null);
+
+    toast({
+      title: "Bets Placed",
+      description: `${entries.length} entr${
+        entries.length > 1 ? "ies" : "y"
+      } submitted successfully. Total ₹${total} deducted.`,
+    });
+  } catch (error: any) {
+    console.error("Failed to submit bets:", error);
+    toast({
+      title: "Bet Failed",
+      description:
+        error?.message || "Unable to submit entries. Please try again.",
+      variant: "destructive",
+    });
+  } finally {
+    setSubmittingBet(false);
+  }
+};
 
   const handleLogout = () => {
     logout();
@@ -159,18 +229,36 @@ const Dashboard = () => {
     setShowMobileMenu(false);
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.origin);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.origin);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
 
-    toast({
-      title: "Link Copied",
-      description: "App link copied to clipboard!",
-    });
+      toast({
+        title: "Link Copied",
+        description: "App link copied to clipboard!",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Unable to copy link.",
+        variant: "destructive",
+      });
+    }
   };
 
-  if (loading || !user) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-sm font-mono text-muted-foreground">
+          Loading dashboard...
+        </p>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   const timeStr = currentTime.toLocaleTimeString("en-US", {
     hour: "2-digit",
@@ -189,13 +277,14 @@ const Dashboard = () => {
           <div className="fixed bottom-0 left-0 right-0 bg-card rounded-t-2xl p-6 z-50 animate-slide-up">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-mono font-bold">Share App</h3>
-              <button onClick={() => setShowShareOptions(false)}>
+              <button type="button" onClick={() => setShowShareOptions(false)}>
                 <X className="w-5 h-5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="space-y-3">
               <button
+                type="button"
                 onClick={() => {
                   window.open(
                     `https://wa.me/?text=${encodeURIComponent(
@@ -212,6 +301,7 @@ const Dashboard = () => {
               </button>
 
               <button
+                type="button"
                 onClick={handleCopyLink}
                 className="w-full flex items-center gap-3 p-3 hover:bg-accent/10 rounded-lg transition-colors"
               >
@@ -249,7 +339,7 @@ const Dashboard = () => {
               </div>
               <span className="text-sm font-mono font-bold">Menu</span>
             </div>
-            <button onClick={() => setShowMobileMenu(false)}>
+            <button type="button" onClick={() => setShowMobileMenu(false)}>
               <X className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
@@ -271,6 +361,7 @@ const Dashboard = () => {
 
         <div className="p-2">
           <button
+            type="button"
             onClick={() => {
               navigate("/dashboard");
               setShowMobileMenu(false);
@@ -282,8 +373,9 @@ const Dashboard = () => {
           </button>
 
           <button
+            type="button"
             onClick={() => {
-              setShowProfile(!showProfile);
+              setShowProfile((prev) => !prev);
               setShowMobileMenu(false);
             }}
             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/10 rounded-lg transition-colors"
@@ -293,6 +385,7 @@ const Dashboard = () => {
           </button>
 
           <button
+            type="button"
             onClick={() => {
               navigate("/wallet");
               setShowMobileMenu(false);
@@ -307,6 +400,7 @@ const Dashboard = () => {
           </button>
 
           <button
+            type="button"
             onClick={() => {
               navigate("/history");
               setShowMobileMenu(false);
@@ -318,6 +412,7 @@ const Dashboard = () => {
           </button>
 
           <button
+            type="button"
             onClick={handleShare}
             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/10 rounded-lg transition-colors"
           >
@@ -328,6 +423,7 @@ const Dashboard = () => {
           <div className="border-t border-foreground/10 my-2" />
 
           <button
+            type="button"
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
           >
@@ -341,6 +437,7 @@ const Dashboard = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
+              type="button"
               onClick={() => setShowMobileMenu(true)}
               className="lg:hidden p-2 hover:bg-accent/10 rounded-lg transition-colors"
             >
@@ -361,6 +458,7 @@ const Dashboard = () => {
           </div>
 
           <button
+            type="button"
             onClick={() => navigate("/wallet")}
             className="flex items-center gap-2 surface-raised px-3 py-2 hover:border-primary/30 transition-colors"
           >
@@ -379,7 +477,7 @@ const Dashboard = () => {
               <h3 className="text-xs font-mono font-bold text-primary">
                 Profile Details
               </h3>
-              <button onClick={() => setShowProfile(false)}>
+              <button type="button" onClick={() => setShowProfile(false)}>
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
@@ -416,15 +514,22 @@ const Dashboard = () => {
           Available Games
         </span>
         <button
+          type="button"
           onClick={loadGames}
-          className="flex items-center gap-1 text-xs font-mono text-primary"
+          disabled={gamesLoading}
+          className="flex items-center gap-1 text-xs font-mono text-primary disabled:opacity-50"
         >
-          <RefreshCw className="w-3 h-3" /> Refresh
+          <RefreshCw className={`w-3 h-3 ${gamesLoading ? "animate-spin" : ""}`} />
+          Refresh
         </button>
       </div>
 
       <div className="px-4 space-y-3">
-        {games.length === 0 ? (
+        {gamesLoading ? (
+          <p className="text-center font-mono text-sm text-muted-foreground py-20">
+            Loading games...
+          </p>
+        ) : games.length === 0 ? (
           <p className="text-center font-mono text-sm text-muted-foreground py-20">
             No games available
           </p>
