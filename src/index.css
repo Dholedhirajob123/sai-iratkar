@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,26 +6,27 @@
 
 @layer base {
   :root {
-    --background: 0 0% 6.7%;
-    --foreground: 0 0% 91.8%;
+    --background: 45 17% 98%;
+    --foreground: 0 0% 0%;
+    --foreground-bold: 0 0% 0%;
 
-    --card: red;
-    --card-foreground: 0 0% 91.8%;
+    --card: 45 17% 98%;
+    --card-foreground: 0 0% 0%;
 
-    --popover: 0 0% 11%;
-    --popover-foreground: 0 0% 91.8%;
+    --popover: 45 17% 98%;
+    --popover-foreground: 0 0% 0%;
 
     --primary: 51 100% 50%;
-    --primary-foreground: 0 0% 6.7%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 0 0% 11%;
-    --secondary-foreground: 0 0% 91.8%;
+    --secondary: 45 17% 94%;
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 0 0% 11%;
-    --muted-foreground: 0 0% 53.3%;
+    --muted: 45 17% 94%;
+    --muted-foreground: 0 0% 20%;
 
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 91.8%;
+    --accent: 45 17% 94%;
+    --accent-foreground: 0 0% 0%;
 
     --destructive: 4 100% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -33,19 +34,19 @@
     --success: 127 63% 49%;
     --success-foreground: 0 0% 100%;
 
-    --border: 0 0% 91.8%;
-    --input: 0 0% 20%;
+    --border: 0 0% 0%;
+    --input: 45 17% 94%;
     --ring: 51 100% 50%;
 
     --radius: 0px;
 
-    --sidebar-background: 0 0% 6.7%;
-    --sidebar-foreground: 0 0% 91.8%;
+    --sidebar-background: 45 17% 98%;
+    --sidebar-foreground: 0 0% 0%;
     --sidebar-primary: 51 100% 50%;
-    --sidebar-primary-foreground: 0 0% 6.7%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 91.8%;
-    --sidebar-border: 0 0% 91.8%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 45 17% 94%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 0%;
     --sidebar-ring: 51 100% 50%;
 
     --font-mono: 'Roboto Mono', monospace;
@@ -61,10 +62,55 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    font-weight: 600;
+    color: #000000;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-mono);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: #000000;
+  }
+
+  p, span, a, button, input, textarea, select, label {
+    font-weight: 700;
+    color: #000000;
+  }
+
+  strong, b {
+    font-weight: 900;
+    color: #000000;
+  }
+
+  /* Make all text pure black */
+  .text-muted-foreground {
+    color: #000000;
+    font-weight: 600;
+    opacity: 0.7;
+  }
+
+  /* Admin specific styles */
+  [data-admin="true"] body,
+  .admin-layout,
+  .admin-panel {
+    color: #000000;
+  }
+
+  /* All text in admin sections should be black */
+  .admin-section,
+  .admin-table,
+  .admin-card,
+  .admin-dashboard {
+    color: #000000;
+  }
+
+  /* Force black text on all admin components */
+  .admin-section *,
+  .admin-table *,
+  .admin-card *,
+  .admin-dashboard * {
+    color: #000000;
   }
 }
 
@@ -74,15 +120,16 @@
   }
 
   .surface-card {
-    @apply bg-card border-2 border-foreground/20;
+    @apply bg-card border-2 border-black/20 shadow-sm;
   }
 
   .surface-raised {
-    @apply bg-accent border-2 border-foreground/10;
+    @apply bg-secondary border-2 border-black/10 shadow-sm;
   }
 
   .text-gold {
     color: hsl(var(--primary));
+    font-weight: 900;
   }
 
   .bg-gold {
@@ -91,11 +138,170 @@
 
   .text-success {
     color: hsl(var(--success));
+    font-weight: 900;
   }
 
   .text-destructive-accent {
     color: hsl(var(--destructive));
+    font-weight: 900;
   }
+
+  .text-bold {
+    font-weight: 900;
+  }
+
+  .text-extrabold {
+    font-weight: 900;
+  }
+
+  /* Enhanced table styles with black text */
+  table th {
+    font-weight: 900;
+    color: #000000;
+    background-color: hsl(45, 17%, 96%);
+    padding: 12px 8px;
+    border-bottom: 2px solid #000000;
+  }
+
+  table td {
+    font-weight: 700;
+    color: #000000;
+    padding: 12px 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  /* Button styles */
+  button {
+    font-weight: 800;
+    transition: all 0.2s ease;
+    color: #000000;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  /* Input styles with black text */
+  input, textarea, select {
+    font-weight: 700;
+    background-color: hsl(var(--input));
+    border-color: rgba(0, 0, 0, 0.2);
+    color: #000000;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: rgba(0, 0, 0, 0.5);
+    font-weight: 600;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: hsl(var(--primary));
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+  }
+
+  /* Link styles */
+  a {
+    font-weight: 800;
+    text-decoration: none;
+    color: #000000;
+  }
+
+  a:hover {
+    text-decoration: underline;
+    color: hsl(var(--primary));
+  }
+
+  /* Card styles */
+  .card-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Badge styles */
+  .badge {
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #000000;
+  }
+
+  /* Price/Amount styles */
+  .amount {
+    font-weight: 900;
+    font-size: 1.125rem;
+    color: #000000;
+  }
+
+  /* Admin specific utilities */
+  .admin-text {
+    color: #000000 !important;
+    font-weight: 700 !important;
+  }
+
+  .admin-bold {
+    color: #000000 !important;
+    font-weight: 900 !important;
+  }
+
+  /* Table hover effect */
+  .admin-table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Admin Layout Specific Styles */
+.admin-layout {
+  background-color: hsl(45, 17%, 98%);
+}
+
+.admin-layout .surface-card,
+.admin-layout .surface-raised,
+.admin-layout .bg-card,
+.admin-layout .bg-accent {
+  color: #000000;
+}
+
+/* Force black text on all admin components */
+[class*="admin"] {
+  color: #000000;
+}
+
+/* Ensure all text in admin panel is black */
+.admin-panel p,
+.admin-panel span,
+.admin-panel div,
+.admin-panel h1,
+.admin-panel h2,
+.admin-panel h3,
+.admin-panel h4,
+.admin-panel h5,
+.admin-panel h6,
+.admin-panel label,
+.admin-panel input,
+.admin-panel button:not(.bg-primary) {
+  color: #000000;
+}
+
+/* Keep primary button text readable */
+.bg-primary,
+button.bg-primary {
+  color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+/* Success and destructive text colors */
+.text-success {
+  color: hsl(var(--success)) !important;
+}
+
+.text-destructive {
+  color: hsl(var(--destructive)) !important;
 }
 
 @keyframes pulse-slow {
@@ -118,7 +324,7 @@
 
 @keyframes flash-red {
   0% { color: hsl(4, 100%, 60%); }
-  100% { color: hsl(0, 0%, 91.8%); }
+  100% { color: #000000; }
 }
 
 .animate-flash-red {

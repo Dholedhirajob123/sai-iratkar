@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Trophy, Calendar } from "lucide-react";
+import { Search, Trophy, Calendar, TrendingUp, Award, Users, DollarSign, Clock, Filter, BarChart3, Star, Sparkles } from "lucide-react";
 import { getResults, getGames, GameResult, Game } from "@/lib/gameApi";
 import { useToast } from "@/hooks/use-toast";
 
@@ -8,6 +8,7 @@ const AdminResults = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGame, setSelectedGame] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -44,6 +45,11 @@ const AdminResults = () => {
     }
   };
 
+  const gameTypes = useMemo(() => {
+    const types = new Set(results.map(r => r.gameType).filter(Boolean));
+    return ["all", ...Array.from(types)];
+  }, [results]);
+
   const filteredResults = useMemo(() => {
     return results.filter((result) => {
       const gameName = result.gameName || "";
@@ -57,13 +63,12 @@ const AdminResults = () => {
         displayNumber.includes(searchQuery);
 
       const resultGameId = result.game?.id?.toString();
+      const matchesGame = selectedGame === "all" || resultGameId === selectedGame;
+      const matchesType = selectedType === "all" || result.gameType === selectedType;
 
-      const matchesGame =
-        selectedGame === "all" || resultGameId === selectedGame;
-
-      return matchesSearch && matchesGame;
+      return matchesSearch && matchesGame && matchesType;
     });
-  }, [results, searchQuery, selectedGame]);
+  }, [results, searchQuery, selectedGame, selectedType]);
 
   const groupedByDate = useMemo(() => {
     return filteredResults.reduce((acc, result) => {
@@ -74,97 +79,300 @@ const AdminResults = () => {
     }, {} as Record<string, GameResult[]>);
   }, [filteredResults]);
 
+  const stats = {
+    totalResults: filteredResults.length,
+    totalPayout: filteredResults.reduce((sum, r) => sum + (r.totalPayout || 0), 0),
+    totalWinners: filteredResults.reduce((sum, r) => sum + (r.totalWinners || 0), 0),
+    uniqueGames: new Set(filteredResults.map(r => r.gameName)).size,
+    avgPayout: filteredResults.length > 0 ? filteredResults.reduce((sum, r) => sum + (r.totalPayout || 0), 0) / filteredResults.length : 0,
+  };
+
+  const formatDate = (date: Date | string) => {
+    const d = new Date(date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (d.toDateString() === today.toDateString()) {
+      return "Today";
+    } else if (d.toDateString() === yesterday.toDateString()) {
+      return "Yesterday";
+    } else {
+      return d.toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-10">
-        <p className="font-mono text-sm text-muted-foreground">
-          Loading results...
-        </p>
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Trophy className="w-6 h-6 text-blue-600 animate-pulse" />
+          </div>
+        </div>
+        <p className="mt-4 font-mono text-sm text-gray-500">Loading results...</p>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-4">
-        <Trophy className="w-5 h-5 text-primary" />
-        <h2 className="font-mono font-bold">All Declared Results</h2>
-      </div>
-
-      <div className="mb-4 space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search results..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-input border-2 border-foreground/10 pl-10 pr-4 py-2 text-sm font-mono focus:outline-none focus:border-primary/50"
-          />
+    <div className="space-y-6">
+      {/* Header with Stats */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-6 text-white shadow-xl">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
+            <Trophy className="w-8 h-8" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-mono font-black">Results Dashboard</h2>
+            <p className="text-xs font-mono text-blue-100 mt-1">Track and manage declared results</p>
+          </div>
         </div>
 
-        <select
-          value={selectedGame}
-          onChange={(e) => setSelectedGame(e.target.value)}
-          className="w-full bg-input border-2 border-foreground/10 px-3 py-2 text-sm font-mono focus:outline-none focus:border-primary/50"
-        >
-          <option value="all">All Games</option>
-          {games.map((game) => (
-            <option key={game.id} value={game.id.toString()}>
-              {game.name}
-            </option>
-          ))}
-        </select>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-mono opacity-80">Total Results</p>
+                <p className="text-2xl font-mono font-black mt-1">{stats.totalResults}</p>
+              </div>
+              <div className="bg-white/20 p-2 rounded-lg">
+                <BarChart3 className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-mono opacity-80">Total Payout</p>
+                <p className="text-xl font-mono font-black mt-1">₹{stats.totalPayout.toLocaleString()}</p>
+              </div>
+              <div className="bg-white/20 p-2 rounded-lg">
+                <DollarSign className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-mono opacity-80">Total Winners</p>
+                <p className="text-2xl font-mono font-black mt-1">{stats.totalWinners}</p>
+              </div>
+              <div className="bg-white/20 p-2 rounded-lg">
+                <Users className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-mono opacity-80">Unique Games</p>
+                <p className="text-2xl font-mono font-black mt-1">{stats.uniqueGames}</p>
+              </div>
+              <div className="bg-white/20 p-2 rounded-lg">
+                <Star className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-mono opacity-80">Avg Payout</p>
+                <p className="text-xl font-mono font-black mt-1">₹{Math.round(stats.avgPayout).toLocaleString()}</p>
+              </div>
+              <div className="bg-white/20 p-2 rounded-lg">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* Search and Filter Bar */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by game name, type, or number..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-gray-50 border-2 border-gray-200 pl-12 pr-4 py-3.5 text-sm font-mono font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white rounded-xl transition-all duration-200"
+            />
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Filter className="w-5 h-5 text-gray-500" />
+            <select
+              value={selectedGame}
+              onChange={(e) => setSelectedGame(e.target.value)}
+              className="bg-gray-50 border-2 border-gray-200 px-5 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-xl cursor-pointer hover:bg-gray-100 transition-all duration-200"
+            >
+              <option value="all">All Games</option>
+              {games.map((game) => (
+                <option key={game.id} value={game.id.toString()}>
+                  {game.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Trophy className="w-5 h-5 text-gray-500" />
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className="bg-gray-50 border-2 border-gray-200 px-5 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-xl cursor-pointer hover:bg-gray-100 transition-all duration-200"
+            >
+              <option value="all">All Types</option>
+              {gameTypes.filter(t => t !== "all").map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Results Section */}
       {Object.keys(groupedByDate).length === 0 ? (
-        <p className="text-center text-muted-foreground py-10 font-mono text-sm">
-          No results declared yet
-        </p>
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-4">
+            <Trophy className="w-10 h-10 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-mono font-bold text-gray-700 mb-2">
+            No results found
+          </h3>
+          <p className="text-sm font-mono text-gray-500">
+            {searchQuery ? "Try adjusting your search terms" : "Results will appear here once declared"}
+          </p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {Object.entries(groupedByDate).map(([date, dateResults]) => (
-            <div key={date} className="surface-card p-3">
-              <div className="flex items-center gap-2 mb-2 text-xs font-mono text-muted-foreground">
-                <Calendar className="w-3 h-3" />
-                {date}
+            <div key={date} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+              {/* Date Header */}
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-100 p-2 rounded-xl">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-mono font-bold text-gray-500">DATE</p>
+                      <p className="text-sm font-mono font-black text-gray-900">{formatDate(date)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="text-[9px] font-mono text-gray-500">Results</p>
+                      <p className="text-sm font-mono font-bold text-blue-600">{dateResults.length}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[9px] font-mono text-gray-500">Total Payout</p>
+                      <p className="text-sm font-mono font-bold text-green-600">
+                        ₹{dateResults.reduce((sum, r) => sum + (r.totalPayout || 0), 0).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {dateResults.map((result) => (
-                  <div
-                    key={result.id}
-                    className="p-3 bg-accent/10 rounded border-l-2 border-primary"
-                  >
-                    <p className="text-[10px] font-mono text-muted-foreground">
-                      {result.gameName}
-                    </p>
+              {/* Results Grid */}
+              <div className="p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {dateResults.map((result) => (
+                    <div
+                      key={result.id}
+                      className="group bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300 cursor-pointer"
+                    >
+                      {/* Game Header */}
+                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b border-blue-100">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-[10px] font-mono font-bold text-blue-600 uppercase tracking-wider">
+                              {result.gameName}
+                            </p>
+                            <p className="text-xs font-mono font-bold text-gray-700 mt-0.5">
+                              {result.gameType}
+                            </p>
+                          </div>
+                          <div className="bg-blue-100 p-1.5 rounded-lg">
+                            <Sparkles className="w-3 h-3 text-blue-600" />
+                          </div>
+                        </div>
+                      </div>
 
-                    <p className="text-xs font-mono font-semibold mt-1">
-                      {result.gameType}
-                    </p>
+                      {/* Winning Number */}
+                      <div className="px-4 py-4 text-center">
+                        <div className="inline-flex items-center gap-2 bg-white rounded-2xl px-4 py-2 shadow-sm">
+                          <span className="text-2xl font-mono font-bold text-gray-800">
+                            {result.leftNumber || "-"}
+                          </span>
+                          <span className="text-3xl font-mono font-black text-blue-600">
+                            {result.centerNumber || "-"}
+                          </span>
+                          <span className="text-2xl font-mono font-bold text-gray-800">
+                            {result.rightNumber || "-"}
+                          </span>
+                        </div>
+                      </div>
 
-                    {/* ✅ UPDATED NUMBER DISPLAY */}
-                    <p className="text-sm font-mono font-bold text-primary mt-1">
-                      {result.leftNumber || "-"}{" "}
-                      {result.centerNumber || "-"}{" "}
-                      {result.rightNumber || "-"}
-                    </p>
+                      {/* Stats Grid */}
+                      <div className="px-4 pb-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-gray-50 rounded-xl p-2 text-center">
+                            <div className="flex items-center justify-center gap-1 mb-1">
+                              <Clock className="w-3 h-3 text-gray-500" />
+                              <p className="text-[8px] font-mono text-gray-500">TIME</p>
+                            </div>
+                            <p className="text-[10px] font-mono font-bold text-gray-700">
+                              {new Date(result.declaredAt).toLocaleTimeString()}
+                            </p>
+                          </div>
+                          <div className="bg-gray-50 rounded-xl p-2 text-center">
+                            <div className="flex items-center justify-center gap-1 mb-1">
+                              <Award className="w-3 h-3 text-gray-500" />
+                              <p className="text-[8px] font-mono text-gray-500">TYPE</p>
+                            </div>
+                            <p className="text-[9px] font-mono font-bold text-blue-600 uppercase">
+                              {result.timeType || "RESULT"}
+                            </p>
+                          </div>
+                        </div>
 
-                    <p className="text-[10px] font-mono text-muted-foreground mt-1">
-                      {new Date(result.declaredAt).toLocaleTimeString()}
-                    </p>
+                        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200">
+                          <div className="text-center">
+                            <p className="text-[8px] font-mono text-gray-500">WINNERS</p>
+                            <p className="text-sm font-mono font-bold text-gray-900">
+                              {result.totalWinners || 0}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-[8px] font-mono text-gray-500">PAYOUT</p>
+                            <p className="text-sm font-mono font-bold text-green-600">
+                              ₹{result.totalPayout?.toLocaleString() || 0}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
 
-                    <p className="text-[10px] font-mono text-muted-foreground mt-1">
-                      Winners: {result.totalWinners} | Payout: ₹
-                      {result.totalPayout}
-                    </p>
-
-                    <p className="text-[10px] font-mono text-muted-foreground mt-1">
-                      {result.timeType?.toUpperCase()}
-                    </p>
-                  </div>
-                ))}
+                      {/* Hover Effect Badge */}
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="bg-blue-500 rounded-full p-1.5 shadow-lg">
+                          <Trophy className="w-3 h-3 text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ))}

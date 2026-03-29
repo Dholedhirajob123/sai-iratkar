@@ -97,6 +97,14 @@ export interface LoginResponse {
 
 const BASE_URL = "http://localhost:5003";
 
+// Cache keys for offline storage
+const CACHE_KEYS = {
+  GAMES: 'cached_games',
+  ENTRIES: 'cached_entries',
+  TRANSACTIONS: 'cached_transactions',
+  RESULTS: 'cached_results'
+};
+
 const getToken = () => {
   return localStorage.getItem("token");
 };
@@ -108,6 +116,53 @@ const getHeaders = (isJson: boolean = false): HeadersInit => {
     ...(isJson ? { "Content-Type": "application/json" } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
+};
+
+// Helper function to check if we're online
+export const isOnline = (): boolean => {
+  return navigator.onLine;
+};
+
+// Helper function to cache data
+const cacheData = (key: string, data: any) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error('Failed to cache data:', error);
+  }
+};
+
+// Helper function to get cached data
+const getCachedData = (key: string) => {
+  try {
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Failed to get cached data:', error);
+    return null;
+  }
+};
+
+// Fetch with timeout and offline support
+const fetchWithTimeout = async (
+  url: string, 
+  options: RequestInit, 
+  timeout = 10000
+): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
 };
 
 const handleResponse = async (response: Response) => {
@@ -168,24 +223,55 @@ export const getCurrentUser = async (token: string): Promise<User> => {
 // ==================== GAMES ====================
 
 export const getGames = async (): Promise<Game[]> => {
-  const response = await fetch(`${BASE_URL}/games`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/games`, {
+      headers: getHeaders(),
+    });
+    const games = await handleResponse(response);
+    cacheData(CACHE_KEYS.GAMES, games);
+    return games;
+  } catch (error) {
+    console.error('Failed to fetch games:', error);
+    // Return cached data if offline
+    const cachedGames = getCachedData(CACHE_KEYS.GAMES);
+    if (cachedGames) {
+      return cachedGames;
+    }
+    return [];
+  }
 };
 
 export const getActiveGames = async (): Promise<Game[]> => {
-  const response = await fetch(`${BASE_URL}/games/active`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/games/active`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch active games:', error);
+    const cachedGames = getCachedData(CACHE_KEYS.GAMES);
+    if (cachedGames) {
+      return cachedGames.filter((game: Game) => game.isActive || game.active);
+    }
+    return [];
+  }
 };
 
 export const getGameById = async (id: number): Promise<Game> => {
-  const response = await fetch(`${BASE_URL}/games/${id}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/games/${id}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch game:', error);
+    const cachedGames = getCachedData(CACHE_KEYS.GAMES);
+    if (cachedGames) {
+      const game = cachedGames.find((g: Game) => g.id === id);
+      if (game) return game;
+    }
+    throw error;
+  }
 };
 
 export const createGame = async (game: Partial<Game>): Promise<Game> => {
@@ -194,7 +280,10 @@ export const createGame = async (game: Partial<Game>): Promise<Game> => {
     headers: getHeaders(true),
     body: JSON.stringify(game),
   });
-  return handleResponse(response);
+  const newGame = await handleResponse(response);
+  // Invalidate cache
+  localStorage.removeItem(CACHE_KEYS.GAMES);
+  return newGame;
 };
 
 export const updateGame = async (
@@ -206,7 +295,9 @@ export const updateGame = async (
     headers: getHeaders(true),
     body: JSON.stringify(game),
   });
-  return handleResponse(response);
+  const updatedGame = await handleResponse(response);
+  localStorage.removeItem(CACHE_KEYS.GAMES);
+  return updatedGame;
 };
 
 export const deleteGame = async (id: number): Promise<string> => {
@@ -214,7 +305,9 @@ export const deleteGame = async (id: number): Promise<string> => {
     method: "DELETE",
     headers: getHeaders(),
   });
-  return handleResponse(response);
+  const result = await handleResponse(response);
+  localStorage.removeItem(CACHE_KEYS.GAMES);
+  return result;
 };
 
 export const toggleGameStatus = async (id: number): Promise<Game> => {
@@ -222,26 +315,42 @@ export const toggleGameStatus = async (id: number): Promise<Game> => {
     method: "PATCH",
     headers: getHeaders(),
   });
-  return handleResponse(response);
+  const updatedGame = await handleResponse(response);
+  localStorage.removeItem(CACHE_KEYS.GAMES);
+  return updatedGame;
 };
 
 export const searchGames = async (name: string): Promise<Game[]> => {
-  const response = await fetch(
-    `${BASE_URL}/games/search?name=${encodeURIComponent(name)}`,
-    {
-      headers: getHeaders(),
+  try {
+    const response = await fetchWithTimeout(
+      `${BASE_URL}/games/search?name=${encodeURIComponent(name)}`,
+      { headers: getHeaders() }
+    );
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to search games:', error);
+    const cachedGames = getCachedData(CACHE_KEYS.GAMES);
+    if (cachedGames) {
+      return cachedGames.filter((game: Game) => 
+        game.name.toLowerCase().includes(name.toLowerCase())
+      );
     }
-  );
-  return handleResponse(response);
+    return [];
+  }
 };
 
 // ==================== USERS ====================
 
 export const getUserById = async (id: number): Promise<User> => {
-  const response = await fetch(`${BASE_URL}/users/${id}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/users/${id}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch user:', error);
+    throw error;
+  }
 };
 
 // ==================== GAME ENTRIES ====================
@@ -252,7 +361,9 @@ export const addGameEntry = async (entry: GameEntry): Promise<GameEntry> => {
     headers: getHeaders(true),
     body: JSON.stringify(entry),
   });
-  return handleResponse(response);
+  const newEntry = await handleResponse(response);
+  localStorage.removeItem(CACHE_KEYS.ENTRIES);
+  return newEntry;
 };
 
 export const addBulkGameEntries = async (
@@ -263,39 +374,77 @@ export const addBulkGameEntries = async (
     headers: getHeaders(true),
     body: JSON.stringify(entries),
   });
-  return handleResponse(response);
+  const newEntries = await handleResponse(response);
+  localStorage.removeItem(CACHE_KEYS.ENTRIES);
+  return newEntries;
 };
 
 export const getAllGameEntries = async (): Promise<GameEntry[]> => {
-  const response = await fetch(`${BASE_URL}/game-entries`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/game-entries`, {
+      headers: getHeaders(),
+    });
+    const entries = await handleResponse(response);
+    cacheData(CACHE_KEYS.ENTRIES, entries);
+    return entries;
+  } catch (error) {
+    console.error('Failed to fetch entries:', error);
+    const cachedEntries = getCachedData(CACHE_KEYS.ENTRIES);
+    return cachedEntries || [];
+  }
 };
 
 export const getEntryById = async (entryId: number): Promise<GameEntry> => {
-  const response = await fetch(`${BASE_URL}/game-entries/${entryId}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/game-entries/${entryId}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch entry:', error);
+    const cachedEntries = getCachedData(CACHE_KEYS.ENTRIES);
+    if (cachedEntries) {
+      const entry = cachedEntries.find((e: GameEntry) => e.id === entryId);
+      if (entry) return entry;
+    }
+    throw error;
+  }
 };
 
 export const getEntriesByUserId = async (
   userId: number
 ): Promise<GameEntry[]> => {
-  const response = await fetch(`${BASE_URL}/game-entries/user/${userId}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/game-entries/user/${userId}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch user entries:', error);
+    const cachedEntries = getCachedData(CACHE_KEYS.ENTRIES);
+    if (cachedEntries) {
+      return cachedEntries.filter((e: GameEntry) => e.user?.id === userId);
+    }
+    return [];
+  }
 };
 
 export const getEntriesByGameId = async (
   gameId: number
 ): Promise<GameEntry[]> => {
-  const response = await fetch(`${BASE_URL}/game-entries/game/${gameId}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/game-entries/game/${gameId}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch game entries:', error);
+    const cachedEntries = getCachedData(CACHE_KEYS.ENTRIES);
+    if (cachedEntries) {
+      return cachedEntries.filter((e: GameEntry) => e.game?.id === gameId);
+    }
+    return [];
+  }
 };
 
 // ==================== LEFT NUMBERS ====================
@@ -312,28 +461,43 @@ export const addLeftNumber = async (
 };
 
 export const getAllLeftNumbers = async (): Promise<LeftNumberEntry[]> => {
-  const response = await fetch(`${BASE_URL}/left-numbers`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/left-numbers`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch left numbers:', error);
+    return [];
+  }
 };
 
 export const getLeftNumberById = async (
   id: number
 ): Promise<LeftNumberEntry> => {
-  const response = await fetch(`${BASE_URL}/left-numbers/${id}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/left-numbers/${id}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch left number:', error);
+    throw error;
+  }
 };
 
 export const getLeftNumbersByGame = async (
   gameId: number
 ): Promise<LeftNumberEntry[]> => {
-  const response = await fetch(`${BASE_URL}/left-numbers/game/${gameId}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/left-numbers/game/${gameId}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch game left numbers:', error);
+    return [];
+  }
 };
 
 // ==================== RESULTS ====================
@@ -346,30 +510,59 @@ export const declareResult = async (
     headers: getHeaders(true),
     body: JSON.stringify(payload),
   });
-  return handleResponse(response);
+  const result = await handleResponse(response);
+  localStorage.removeItem(CACHE_KEYS.RESULTS);
+  return result;
 };
 
 export const getResults = async (): Promise<GameResult[]> => {
-  const response = await fetch(`${BASE_URL}/game-results`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/game-results`, {
+      headers: getHeaders(),
+    });
+    const results = await handleResponse(response);
+    cacheData(CACHE_KEYS.RESULTS, results);
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch results:', error);
+    const cachedResults = getCachedData(CACHE_KEYS.RESULTS);
+    return cachedResults || [];
+  }
 };
 
 export const getResultById = async (resultId: number): Promise<GameResult> => {
-  const response = await fetch(`${BASE_URL}/game-results/${resultId}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/game-results/${resultId}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch result:', error);
+    const cachedResults = getCachedData(CACHE_KEYS.RESULTS);
+    if (cachedResults) {
+      const result = cachedResults.find((r: GameResult) => r.id === resultId);
+      if (result) return result;
+    }
+    throw error;
+  }
 };
 
 export const getResultsByGameId = async (
   gameId: number
 ): Promise<GameResult[]> => {
-  const response = await fetch(`${BASE_URL}/game-results/game/${gameId}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/game-results/game/${gameId}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch game results:', error);
+    const cachedResults = getCachedData(CACHE_KEYS.RESULTS);
+    if (cachedResults) {
+      return cachedResults.filter((r: GameResult) => r.gameId === gameId);
+    }
+    return [];
+  }
 };
 
 // ==================== TRANSACTIONS ====================
@@ -382,30 +575,61 @@ export const addTransaction = async (
     headers: getHeaders(true),
     body: JSON.stringify(payload),
   });
-  return handleResponse(response);
+  const transaction = await handleResponse(response);
+  localStorage.removeItem(CACHE_KEYS.TRANSACTIONS);
+  return transaction;
 };
 
 export const getAllTransactions = async (): Promise<Transaction[]> => {
-  const response = await fetch(`${BASE_URL}/transactions`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/transactions`, {
+      headers: getHeaders(),
+    });
+    const transactions = await handleResponse(response);
+    cacheData(CACHE_KEYS.TRANSACTIONS, transactions);
+    return transactions;
+  } catch (error) {
+    console.error('Failed to fetch transactions:', error);
+    const cachedTransactions = getCachedData(CACHE_KEYS.TRANSACTIONS);
+    return cachedTransactions || [];
+  }
 };
 
 export const getTransactionById = async (
   transactionId: number
 ): Promise<Transaction> => {
-  const response = await fetch(`${BASE_URL}/transactions/${transactionId}`, {
-    headers: getHeaders(),
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/transactions/${transactionId}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch transaction:', error);
+    throw error;
+  }
 };
 
 export const getUserTransactions = async (
   userId: number
 ): Promise<Transaction[]> => {
-  const response = await fetch(`${BASE_URL}/transactions/user/${userId}`, {
-    headers: getHeaders(),
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/transactions/user/${userId}`, {
+      headers: getHeaders(),
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Failed to fetch user transactions:', error);
+    const cachedTransactions = getCachedData(CACHE_KEYS.TRANSACTIONS);
+    if (cachedTransactions) {
+      return cachedTransactions.filter((t: Transaction) => t.userId === userId);
+    }
+    return [];
+  }
+};
+
+// Helper function to clear all caches
+export const clearAllCaches = () => {
+  Object.values(CACHE_KEYS).forEach(key => {
+    localStorage.removeItem(key);
   });
-  return handleResponse(response);
 };

@@ -14,6 +14,16 @@ import {
   History,
   Share2,
   Check,
+  Sparkles,
+  TrendingUp,
+  Award,
+  Clock,
+  ChevronRight,
+  Gamepad2,
+  Zap,
+  Bell,
+  Settings,
+  AlertCircle
 } from "lucide-react";
 import {
   getGames,
@@ -25,6 +35,10 @@ import { useToast } from "@/hooks/use-toast";
 import GameCard from "@/components/GameCard";
 import GameTypeSelector from "@/components/GameTypeSelector";
 import BottomNav from "@/components/BottomNav";
+
+// Valid double-digit center numbers that should appear in RED
+const VALID_DOUBLE_DIGIT_CENTER = ["11", "22", "33", "44", "55", "66", "77", "88", "99", "16", "27", "38", "49", "50", "61", "72", "83", "05"];
+
 const getTodayDateTime = (time: string): Date => {
   const now = new Date();
   const [hours, minutes] = time.split(":").map(Number);
@@ -41,15 +55,27 @@ const canPlayGame = (game: Game, playType: "open" | "close") => {
   const closeDate = getTodayDateTime(game.closeTime);
 
   if (playType === "open") {
-    return now < openDate; // ✅ play anytime before openTime
+    return now < openDate;
   }
 
   if (playType === "close") {
-    return now < closeDate; // ✅ play anytime before closeTime
+    return now < closeDate;
   }
 
   return false;
 };
+
+// Helper function to get center number style
+const getCenterNumberStyle = (centerNum: string) => {
+  if (VALID_DOUBLE_DIGIT_CENTER.includes(centerNum)) {
+    return "text-red-600 font-black";
+  }
+  if (centerNum.length === 1 || centerNum === "*") {
+    return "text-blue-600 font-black";
+  }
+  return "text-gray-800 font-bold";
+};
+
 const Dashboard = () => {
   const { user, loading, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -111,113 +137,113 @@ const Dashboard = () => {
   }, []);
 
   const handleBetSubmit = async (
-  entries: {
-    gameType: string;
-    number: string;
-    amount: number;
-    playerName: string;
-  }[]
-) => {
-  if (!user || !selectedGame || submittingBet) return;
+    entries: {
+      gameType: string;
+      number: string;
+      amount: number;
+      playerName: string;
+    }[]
+  ) => {
+    if (!user || !selectedGame || submittingBet) return;
 
-  const isGameActive =
-    selectedGame.game.isActive === true || selectedGame.game.active === true;
+    const isGameActive =
+      selectedGame.game.isActive === true || selectedGame.game.active === true;
 
-  if (!isGameActive) {
-    toast({
-      title: "Game Closed",
-      description: "This game is currently inactive.",
-      variant: "destructive",
-    });
-    setSelectedGame(null);
-    return;
-  }
+    if (!isGameActive) {
+      toast({
+        title: "Game Closed",
+        description: "This game is currently inactive.",
+        variant: "destructive",
+      });
+      setSelectedGame(null);
+      return;
+    }
 
-  const allowedToPlay = canPlayGame(
-    selectedGame.game,
-    selectedGame.playType
-  );
+    const allowedToPlay = canPlayGame(
+      selectedGame.game,
+      selectedGame.playType
+    );
 
-  if (!allowedToPlay) {
-    toast({
-      title: "Time Out",
-      description: `${selectedGame.playType.toUpperCase()} play is closed for this game.`,
-      variant: "destructive",
-    });
-    setSelectedGame(null);
-    return;
-  }
+    if (!allowedToPlay) {
+      toast({
+        title: "Time Out",
+        description: `${selectedGame.playType.toUpperCase()} play is closed for this game.`,
+        variant: "destructive",
+      });
+      setSelectedGame(null);
+      return;
+    }
 
-  if (!entries || entries.length === 0) {
-    toast({
-      title: "Invalid Entry",
-      description: "Please add at least one entry.",
-      variant: "destructive",
-    });
-    return;
-  }
+    if (!entries || entries.length === 0) {
+      toast({
+        title: "Invalid Entry",
+        description: "Please add at least one entry.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
+    const total = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
-  if (total <= 0) {
-    toast({
-      title: "Invalid Amount",
-      description: "Bet amount must be greater than zero.",
-      variant: "destructive",
-    });
-    return;
-  }
+    if (total <= 0) {
+      toast({
+        title: "Invalid Amount",
+        description: "Bet amount must be greater than zero.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  if (user.balance < total) {
-    toast({
-      title: "Insufficient Balance",
-      description: `You need ₹${total}, but your balance is ₹${user.balance}.`,
-      variant: "destructive",
-    });
-    return;
-  }
+    if (user.balance < total) {
+      toast({
+        title: "Insufficient Balance",
+        description: `You need ₹${total}, but your balance is ₹${user.balance}.`,
+        variant: "destructive",
+      });
+      return;
+    }
 
-  try {
-    setSubmittingBet(true);
+    try {
+      setSubmittingBet(true);
 
-    const payload: GameEntry[] = entries.map((entry) => ({
-      user: {
-        id: user.id,
-      },
-      game: {
-        id: selectedGame.game.id,
-      },
-      gameName: selectedGame.game.name,
-      playType: selectedGame.playType,
-      gameType: entry.gameType,
-      number: entry.number,
-      amount: entry.amount,
-      playerName: entry.playerName,
-      leftNumberFlag: false,
-    }));
+      const payload: GameEntry[] = entries.map((entry) => ({
+        user: {
+          id: user.id,
+        },
+        game: {
+          id: selectedGame.game.id,
+        },
+        gameName: selectedGame.game.name,
+        playType: selectedGame.playType,
+        gameType: entry.gameType,
+        number: entry.number,
+        amount: entry.amount,
+        playerName: entry.playerName,
+        leftNumberFlag: false,
+      }));
 
-    await addBulkGameEntries(payload);
-    await refreshUser();
-    setSelectedGame(null);
+      await addBulkGameEntries(payload);
+      await refreshUser();
+      setSelectedGame(null);
 
-    toast({
-      title: "Bets Placed",
-      description: `${entries.length} entr${
-        entries.length > 1 ? "ies" : "y"
-      } submitted successfully. Total ₹${total} deducted.`,
-    });
-  } catch (error: any) {
-    console.error("Failed to submit bets:", error);
-    toast({
-      title: "Bet Failed",
-      description:
-        error?.message || "Unable to submit entries. Please try again.",
-      variant: "destructive",
-    });
-  } finally {
-    setSubmittingBet(false);
-  }
-};
+      toast({
+        title: "Success!",
+        description: `${entries.length} entr${
+          entries.length > 1 ? "ies" : "y"
+        } submitted. Total ₹${total} deducted.`,
+      });
+    } catch (error: any) {
+      console.error("Failed to submit bets:", error);
+      toast({
+        title: "Bet Failed",
+        description:
+          error?.message || "Unable to submit entries. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingBet(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -250,10 +276,16 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-sm font-mono text-muted-foreground">
-          Loading dashboard...
-        </p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Star className="w-6 h-6 text-blue-600 animate-pulse" />
+            </div>
+          </div>
+          <p className="mt-4 text-sm font-mono text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -266,19 +298,26 @@ const Dashboard = () => {
     hour12: true,
   });
 
+  const activeGames = games.filter(g => g.isActive || g.active).length;
+
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 pb-20">
+      {/* Share Options Modal */}
       {showShareOptions && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
             onClick={() => setShowShareOptions(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 bg-card rounded-t-2xl p-6 z-50 animate-slide-up">
+          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-50 shadow-2xl animate-slide-up">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-mono font-bold">Share App</h3>
-              <button type="button" onClick={() => setShowShareOptions(false)}>
-                <X className="w-5 h-5 text-muted-foreground" />
+              <h3 className="text-lg font-mono font-bold text-gray-900">Share App</h3>
+              <button 
+                type="button" 
+                onClick={() => setShowShareOptions(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
@@ -294,165 +333,151 @@ const Dashboard = () => {
                   );
                   setShowShareOptions(false);
                 }}
-                className="w-full flex items-center gap-3 p-3 hover:bg-accent/10 rounded-lg transition-colors"
+                className="w-full flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl hover:from-green-100 hover:to-emerald-100 transition-all duration-200 group"
               >
-                <span className="text-green-500 text-xl">📱</span>
-                <span className="text-sm font-mono">WhatsApp</span>
+                <span className="text-2xl">📱</span>
+                <span className="flex-1 text-sm font-mono font-semibold text-green-700">WhatsApp</span>
+                <ChevronRight className="w-4 h-4 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
 
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="w-full flex items-center gap-3 p-3 hover:bg-accent/10 rounded-lg transition-colors"
+                className="w-full flex items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl hover:from-blue-100 hover:to-indigo-100 transition-all duration-200 group"
               >
                 {copied ? (
-                  <Check className="w-5 h-5 text-success" />
+                  <Check className="w-5 h-5 text-green-600" />
                 ) : (
-                  <span className="text-primary text-xl">🔗</span>
+                  <span className="text-2xl">🔗</span>
                 )}
-                <span className="text-sm font-mono">
+                <span className="flex-1 text-sm font-mono font-semibold text-blue-700">
                   {copied ? "Copied!" : "Copy Link"}
                 </span>
+                <ChevronRight className="w-4 h-4 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             </div>
           </div>
         </>
       )}
 
+      {/* Mobile Menu Overlay */}
       {showMobileMenu && (
         <div
-          className="fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
           onClick={() => setShowMobileMenu(false)}
         />
       )}
 
+      {/* Sidebar Menu */}
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-card z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
           showMobileMenu ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="p-4 border-b border-foreground/10">
+        <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <Star className="w-4 h-4 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Star className="w-6 h-6 text-white" />
               </div>
-              <span className="text-sm font-mono font-bold">Menu</span>
+              <span className="text-lg font-mono font-bold text-gray-900">Menu</span>
             </div>
-            <button type="button" onClick={() => setShowMobileMenu(false)}>
-              <X className="w-5 h-5 text-muted-foreground" />
+            <button 
+              type="button" 
+              onClick={() => setShowMobileMenu(false)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
         </div>
 
-        <div className="p-4 border-b border-foreground/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
+        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <User className="w-7 h-7 text-white" />
             </div>
             <div>
-              <p className="text-sm font-mono font-semibold">{user.name}</p>
-              <p className="text-[10px] font-mono text-muted-foreground">
-                {user.mobileNumber}
-              </p>
+              <p className="text-base font-mono font-bold text-gray-900">{user.name}</p>
+              <p className="text-xs font-mono text-gray-500">{user.mobileNumber}</p>
+              <div className="flex items-center gap-1 mt-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-[9px] font-mono text-green-600">Active</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="p-2">
-          <button
-            type="button"
-            onClick={() => {
-              navigate("/dashboard");
-              setShowMobileMenu(false);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/10 rounded-lg transition-colors"
-          >
-            <Home className="w-5 h-5 text-primary" />
-            <span className="text-sm font-mono">Home</span>
-          </button>
+        <div className="p-4">
+          {[
+            { icon: Home, label: "Home", path: "/dashboard", color: "blue", bg: "bg-blue-50", text: "text-blue-600" },
+            { icon: User, label: "Profile", action: () => setShowProfile(true), color: "purple", bg: "bg-purple-50", text: "text-purple-600" },
+            { icon: Wallet, label: "Balance", path: "/wallet", color: "green", bg: "bg-green-50", text: "text-green-600", badge: `₹${user.balance}` },
+            { icon: History, label: "History", path: "/history", color: "orange", bg: "bg-orange-50", text: "text-orange-600" },
+            { icon: Share2, label: "Share", action: handleShare, color: "teal", bg: "bg-teal-50", text: "text-teal-600" },
+          ].map((item, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                if (item.path) navigate(item.path);
+                if (item.action) item.action();
+                setShowMobileMenu(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-all duration-200 mb-1 group"
+            >
+              <div className={`p-2 rounded-xl ${item.bg} group-hover:scale-110 transition-transform`}>
+                <item.icon className={`w-5 h-5 ${item.text}`} />
+              </div>
+              <span className="flex-1 text-sm font-mono font-semibold text-gray-700 text-left">{item.label}</span>
+              {item.badge && (
+                <span className="text-sm font-mono font-bold text-blue-600">{item.badge}</span>
+              )}
+              <ChevronRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          ))}
 
-          <button
-            type="button"
-            onClick={() => {
-              setShowProfile((prev) => !prev);
-              setShowMobileMenu(false);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/10 rounded-lg transition-colors"
-          >
-            <User className="w-5 h-5 text-primary" />
-            <span className="text-sm font-mono">Profile</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              navigate("/wallet");
-              setShowMobileMenu(false);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/10 rounded-lg transition-colors"
-          >
-            <Wallet className="w-5 h-5 text-primary" />
-            <span className="text-sm font-mono">Balance</span>
-            <span className="ml-auto text-sm font-mono font-bold text-primary">
-              ₹{user.balance}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              navigate("/history");
-              setShowMobileMenu(false);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/10 rounded-lg transition-colors"
-          >
-            <History className="w-5 h-5 text-primary" />
-            <span className="text-sm font-mono">History</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleShare}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/10 rounded-lg transition-colors"
-          >
-            <Share2 className="w-5 h-5 text-primary" />
-            <span className="text-sm font-mono">Share</span>
-          </button>
-
-          <div className="border-t border-foreground/10 my-2" />
+          <div className="border-t border-gray-100 my-3" />
 
           <button
             type="button"
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 transition-all duration-200 group"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="text-sm font-mono">Logout</span>
+            <div className="p-2 rounded-xl bg-red-50 group-hover:bg-red-100 transition-colors">
+              <LogOut className="w-5 h-5 text-red-600" />
+            </div>
+            <span className="flex-1 text-sm font-mono font-semibold text-red-600 text-left">Logout</span>
+            <ChevronRight className="w-4 h-4 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
         </div>
       </div>
 
-      <div className="surface-card border-t-0 border-x-0 px-4 py-4">
+      {/* Header */}
+      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-4 sticky top-0 z-20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setShowMobileMenu(true)}
-              className="lg:hidden p-2 hover:bg-accent/10 rounded-lg transition-colors"
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-xl transition-colors"
             >
-              <Menu className="w-6 h-6 text-primary" />
+              <Menu className="w-6 h-6 text-gray-600" />
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 border-2 border-primary/30 rounded-lg flex items-center justify-center">
-                <Star className="w-5 h-5 text-primary" />
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl blur-md opacity-50 animate-pulse"></div>
+                <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Star className="w-6 h-6 text-white" />
+                  <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
+                </div>
               </div>
               <div>
-                <h1 className="text-base font-mono font-bold text-foreground">
+                <h1 className="text-xl font-mono font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Matka King
                 </h1>
-                <p className="text-[10px] text-muted-foreground">{timeStr}</p>
+                <p className="text-[10px] text-gray-500">{timeStr}</p>
               </div>
             </div>
           </div>
@@ -460,47 +485,78 @@ const Dashboard = () => {
           <button
             type="button"
             onClick={() => navigate("/wallet")}
-            className="flex items-center gap-2 surface-raised px-3 py-2 hover:border-primary/30 transition-colors"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-500 px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all hover:scale-105"
           >
-            <Wallet className="w-4 h-4 text-primary" />
-            <span className="text-sm font-mono font-semibold text-foreground">
-              ₹{user.balance}
-            </span>
+            <Wallet className="w-4 h-4 text-white" />
+            <span className="text-sm font-mono font-bold text-white">₹{user.balance}</span>
           </button>
         </div>
       </div>
 
+      {/* Welcome Banner */}
+      <div className="mx-4 mt-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-5 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-mono text-white/80">Welcome back,</p>
+            <h2 className="text-xl font-mono font-bold text-white">{user.name}</h2>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
+                <Gamepad2 className="w-3 h-3 text-white" />
+                <span className="text-[9px] font-mono text-white">{activeGames} Active Games</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/20 p-3 rounded-2xl">
+            <Zap className="w-8 h-8 text-white" />
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Modal */}
       {showProfile && (
-        <div className="px-4 mb-4">
-          <div className="p-4 surface-card border-2 border-primary/20 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-mono font-bold text-primary">
-                Profile Details
-              </h3>
-              <button type="button" onClick={() => setShowProfile(false)}>
-                <X className="w-4 h-4 text-muted-foreground" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowProfile(false)} />
+          <div className="relative bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 animate-fadeIn">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-mono font-bold text-gray-900">Profile Details</h3>
+              <button 
+                type="button" 
+                onClick={() => setShowProfile(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-2 bg-accent/10 rounded">
-                <User className="w-4 h-4 text-primary" />
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl">
+                <div className="p-3 bg-white rounded-xl shadow-md">
+                  <User className="w-6 h-6 text-blue-600" />
+                </div>
                 <div className="flex-1">
-                  <p className="text-[8px] font-mono text-muted-foreground">
-                    Name
-                  </p>
-                  <p className="text-sm font-mono font-semibold">{user.name}</p>
+                  <p className="text-[10px] font-mono text-gray-500">Full Name</p>
+                  <p className="text-base font-mono font-bold text-gray-900">{user.name}</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-2 bg-accent/10 rounded">
-                <Phone className="w-4 h-4 text-primary" />
+              <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl">
+                <div className="p-3 bg-white rounded-xl shadow-md">
+                  <Phone className="w-6 h-6 text-purple-600" />
+                </div>
                 <div className="flex-1">
-                  <p className="text-[8px] font-mono text-muted-foreground">
-                    Phone
-                  </p>
-                  <p className="text-sm font-mono font-semibold">
-                    {user.mobileNumber}
+                  <p className="text-[10px] font-mono text-gray-500">Phone Number</p>
+                  <p className="text-base font-mono font-bold text-gray-900">{user.mobileNumber}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl">
+                <div className="p-3 bg-white rounded-xl shadow-md">
+                  <Award className="w-6 h-6 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] font-mono text-gray-500">Member Since</p>
+                  <p className="text-base font-mono font-bold text-gray-900">
+                    {new Date().getFullYear()}
                   </p>
                 </div>
               </div>
@@ -509,41 +565,66 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between px-4 py-2">
-        <span className="text-xs font-mono text-muted-foreground">
-          Available Games
-        </span>
+      {/* Games Header */}
+      <div className="flex items-center justify-between px-4 py-4">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-blue-100 rounded-lg">
+            <Gamepad2 className="w-4 h-4 text-blue-600" />
+          </div>
+          <span className="text-sm font-mono font-bold text-gray-700">
+            Available Games
+          </span>
+        </div>
         <button
           type="button"
           onClick={loadGames}
           disabled={gamesLoading}
-          className="flex items-center gap-1 text-xs font-mono text-primary disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-all hover:bg-blue-50 rounded-lg"
         >
-          <RefreshCw className={`w-3 h-3 ${gamesLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${gamesLoading ? "animate-spin" : ""}`} />
           Refresh
         </button>
       </div>
 
-      <div className="px-4 space-y-3">
+      {/* Games List - With center number in RED for special double digits */}
+      <div className="px-4 space-y-4 pb-24">
         {gamesLoading ? (
-          <p className="text-center font-mono text-sm text-muted-foreground py-20">
-            Loading games...
-          </p>
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Gamepad2 className="w-5 h-5 text-blue-600 animate-pulse" />
+              </div>
+            </div>
+            <p className="mt-4 text-sm font-mono text-gray-500">Loading games...</p>
+          </div>
         ) : games.length === 0 ? (
-          <p className="text-center font-mono text-sm text-muted-foreground py-20">
-            No games available
-          </p>
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-4">
+              <Star className="w-10 h-10 text-gray-400" />
+            </div>
+            <p className="text-base font-mono font-semibold text-gray-600">No games available</p>
+            <p className="text-xs font-mono text-gray-400 mt-1">Check back later for new games</p>
+          </div>
         ) : (
-          games.map((game) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              onPlayOpen={(g) => setSelectedGame({ game: g, playType: "open" })}
-              onPlayClose={(g) =>
-                setSelectedGame({ game: g, playType: "close" })
-              }
-            />
-          ))
+          games.map((game) => {
+            // Pass the center number styling to GameCard
+            const centerNumberClass = getCenterNumberStyle(game.centerNumber);
+            const isSpecialDouble = VALID_DOUBLE_DIGIT_CENTER.includes(game.centerNumber);
+            
+            return (
+              <GameCard
+                key={game.id}
+                game={game}
+                onPlayOpen={(g) => setSelectedGame({ game: g, playType: "open" })}
+                onPlayClose={(g) =>
+                  setSelectedGame({ game: g, playType: "close" })
+                }
+                centerNumberClass={centerNumberClass}
+                isSpecialDouble={isSpecialDouble}
+              />
+            );
+          })
         )}
       </div>
 

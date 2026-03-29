@@ -1,5 +1,6 @@
 import { Game } from "@/lib/gameApi";
-import { Play, Clock, XCircle } from "lucide-react";
+import { Play, Clock, XCircle, Star, TrendingUp, Calendar, AlertCircle , } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 type GameStatus = "open" | "timeout";
 
@@ -17,7 +18,6 @@ const getTodayDateTime = (time: string): Date => {
   return date;
 };
 
-// ✅ SIMPLE & CORRECT LOGIC
 const getGameStatus = (
   openTime: string,
   closeTime: string
@@ -46,27 +46,16 @@ const formatTime = (time: string) => {
     .padStart(2, "0")} ${ampm}`;
 };
 
-const statusConfig = {
-  open: {
-    label: "Play",
-    icon: Play,
-    className: "text-success border-success/30 bg-success/10",
-  },
-  timeout: {
-    label: "Closed",
-    icon: Clock,
-    className:
-      "text-muted-foreground border-foreground/10 bg-accent opacity-50",
-  },
-};
-
 interface GameCardProps {
   game: Game;
-  onPlayOpen: (game: Game) => void;
-  onPlayClose: (game: Game) => void;
+  onPlayOpen?: (game: Game) => void;
+  onPlayClose?: (game: Game) => void;
+  centerNumberClass?: string; // Add this
+  isSpecialDouble?: boolean;   // Add this
 }
 
 const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
+  const navigate = useNavigate();
   const { openStatus, closeStatus } = getGameStatus(
     game.openTime,
     game.closeTime
@@ -74,14 +63,30 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
 
   const isActive = game.isActive === true || game.active === true;
 
+  const handlePlayOpen = () => {
+    if (onPlayOpen) {
+      onPlayOpen(game);
+    } else {
+      navigate(`/play/${game.id}?type=open`);
+    }
+  };
+
+  const handlePlayClose = () => {
+    if (onPlayClose) {
+      onPlayClose(game);
+    } else {
+      navigate(`/play/${game.id}?type=close`);
+    }
+  };
+
   const renderClosedSection = () => (
-    <div className="flex border-t-2 border-foreground/10">
-      <div className="flex-1 flex items-center justify-center gap-2 py-3 font-mono text-xs font-semibold text-destructive bg-destructive/10 border-r-2 border-foreground/10">
-        <XCircle className="w-3.5 h-3.5" />
+    <div className="flex border-t-2 border-gray-200">
+      <div className="flex-1 flex items-center justify-center gap-2 py-3.5 font-mono text-xs font-bold text-red-600 bg-gradient-to-r from-red-50 to-rose-50 border-r-2 border-gray-200">
+        <XCircle className="w-4 h-4" />
         CLOSED
       </div>
-      <div className="flex-1 flex items-center justify-center gap-2 py-3 font-mono text-xs font-semibold text-destructive bg-destructive/10">
-        <XCircle className="w-3.5 h-3.5" />
+      <div className="flex-1 flex items-center justify-center gap-2 py-3.5 font-mono text-xs font-bold text-red-600 bg-gradient-to-r from-red-50 to-rose-50">
+        <XCircle className="w-4 h-4" />
         CLOSED
       </div>
     </div>
@@ -93,78 +98,111 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
     onClick: () => void,
     withBorder = false
   ) => {
-    const cfg = statusConfig[status];
-    const Icon = cfg.icon;
-    const disabled = status === "timeout";
+    const isTimeout = status === "timeout";
+    
+    // Button styles based on status
+    const buttonStyles = {
+      open: {
+        className: "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md",
+        icon: Play,
+        text: `Play ${label}`,
+      },
+      timeout: {
+        className: "bg-gradient-to-r from-red-500 to-rose-500 text-white cursor-not-allowed",
+        icon: Clock,
+        text: `Time Out`,
+      }
+    };
+
+    const config = buttonStyles[status];
+    const Icon = config.icon;
 
     return (
       <button
         type="button"
         onClick={onClick}
-        disabled={disabled}
-        className={`flex-1 flex items-center justify-center gap-2 py-3 font-mono text-xs font-semibold transition-opacity ${cfg.className} ${
-          withBorder ? "border-r-2 border-foreground/10" : ""
-        } ${disabled ? "cursor-not-allowed pointer-events-none" : "hover:opacity-80"}`}
+        disabled={isTimeout}
+        className={`flex-1 flex items-center justify-center gap-2 py-3.5 font-mono text-xs font-bold transition-all duration-300 ${
+          config.className
+        } ${
+          withBorder ? "border-r-2 border-gray-200" : ""
+        } ${
+          isTimeout 
+            ? "cursor-not-allowed opacity-80" 
+            : "hover:shadow-lg hover:scale-[1.02] active:scale-95"
+        }`}
       >
-        <Icon className="w-3.5 h-3.5" />
-        {cfg.label} {label}
+        <Icon className="w-4 h-4" />
+        {config.text}
       </button>
     );
   };
 
   return (
     <div
-      className={`surface-card p-0 overflow-hidden ${
+      className={`group bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-blue-200 ${
         !isActive ? "opacity-60" : ""
       }`}
     >
-      {/* HEADER */}
-      <div className="bg-accent/50 border-b-2 border-foreground/10 px-4 py-3">
-        <h3 className="text-center font-mono font-bold text-sm text-foreground tracking-widest">
-          {game.name}
-        </h3>
+      {/* HEADER with Game Badge */}
+      <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 border-b border-black-200 px-5 py-4">
+  
+<h3 className="text-center font-mono font-bold text-base text-white tracking-wider flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 px-5 py-2 rounded-xl shadow-md">
+  {game.name}
+</h3>
       </div>
 
       {/* NUMBERS */}
-      <div className="flex items-center justify-center gap-4 py-5 px-4">
-        <span className="text-2xl font-mono font-bold text-foreground">
+      <div className="flex items-center justify-center gap-6 py-8 px-4 bg-white">
+        <span className="text-3xl font-mono font-bold text-gray-800">
           {game.leftNumber}
         </span>
-        <span className="text-3xl font-mono font-bold text-primary">
+        <span className="text-4xl font-mono font-black text-blue-600">
           {game.centerNumber}
         </span>
-        <span className="text-2xl font-mono font-bold text-foreground">
+        <span className="text-3xl font-mono font-bold text-gray-800">
           {game.rightNumber}
         </span>
       </div>
 
-      {/* TIMES */}
-      <div className="flex border-t-2 border-foreground/10">
-        <div className="flex-1 text-center py-3 border-r-2 border-foreground/10">
-          <p className="text-[10px] font-mono text-muted-foreground">
-            OPEN TIME
-          </p>
-          <p className="text-sm font-mono font-semibold">
+      {/* TIMES with Icons and Status */}
+      <div className="flex border-t border-gray-200 bg-gray-50">
+        {/* OPEN TIME Section */}
+        <div className="flex-1 text-center py-4 border-r border-gray-200">
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <Calendar className="w-3 h-3 text-orange-500" />
+            <p className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-wider">
+              OPEN TIME
+            </p>
+          </div>
+          <p className="text-sm font-mono font-bold text-gray-800">
             {formatTime(game.openTime)}
           </p>
+         
         </div>
-        <div className="flex-1 text-center py-3">
-          <p className="text-[10px] font-mono text-muted-foreground">
-            CLOSE TIME
-          </p>
-          <p className="text-sm font-mono font-semibold">
+
+        {/* CLOSE TIME Section */}
+        <div className="flex-1 text-center py-4">
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <TrendingUp className="w-3 h-3 text-purple-500" />
+            <p className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-wider">
+              CLOSE TIME
+            </p>
+          </div>
+          <p className="text-sm font-mono font-bold text-gray-800">
             {formatTime(game.closeTime)}
           </p>
+    
         </div>
       </div>
 
-      {/* BUTTONS */}
+      {/* BUTTONS - Green when available, Red when timeout */}
       {!isActive ? (
         renderClosedSection()
       ) : (
-        <div className="flex border-t-2 border-foreground/10">
-          {renderPlayButton(openStatus, "Open", () => onPlayOpen(game), true)}
-          {renderPlayButton(closeStatus, "Close", () => onPlayClose(game))}
+        <div className="flex border-t border-gray-200">
+          {renderPlayButton(openStatus, "Open", handlePlayOpen, true)}
+          {renderPlayButton(closeStatus, "Close", handlePlayClose)}
         </div>
       )}
     </div>
