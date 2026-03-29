@@ -20,6 +20,8 @@ import {
   Filter,
   ChevronDown,
   ChevronUp,
+  KeyRound,
+  Lock,
 } from "lucide-react";
 
 interface User {
@@ -37,6 +39,7 @@ const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [balanceInputs, setBalanceInputs] = useState<Record<number, string>>({});
+  const [resetPasswordInputs, setResetPasswordInputs] = useState<Record<number, string>>({});
   const [sortField, setSortField] = useState<keyof User>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -171,6 +174,47 @@ const AdminUsers = () => {
       toast({
         title: "Error",
         description: error.message || "Unable to update permission",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleResetPassword = async (id: number, name: string) => {
+    const newPassword = resetPasswordInputs[id];
+
+    if (!newPassword || !/^\d{4}$/.test(newPassword)) {
+  toast({
+    title: "Invalid Password",
+    description: "Password must be exactly 4 digits",
+    variant: "destructive",
+  });
+  return;
+}
+
+    try {
+      const response = await fetch(`http://localhost:5003/admin/reset-password/${id}`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify({ password: newPassword }),
+      });
+
+      const message = await response.text();
+
+      if (!response.ok) {
+        throw new Error(message || "Failed to reset password");
+      }
+
+      toast({
+        title: "Password Reset",
+        description: message || `Password for ${name} has been reset successfully`,
+      });
+
+      setResetPasswordInputs((prev) => ({ ...prev, [id]: "" }));
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Unable to reset password",
         variant: "destructive",
       });
     }
@@ -480,7 +524,6 @@ const AdminUsers = () => {
                   </div>
                 </th>
                 <th className="text-left py-4 px-4 text-xs font-mono font-bold text-gray-600">Phone</th>
-                <th className="text-left py-4 px-4 text-xs font-mono font-bold text-gray-600">Role</th>
                 <th className="text-left py-4 px-4 text-xs font-mono font-bold text-gray-600">User Action</th>
                 <th className="text-left py-4 px-4 cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort("status")}>
                   <div className="flex items-center gap-1 text-xs font-mono font-bold text-gray-600">
@@ -488,6 +531,7 @@ const AdminUsers = () => {
                   </div>
                 </th>
                 <th className="text-left py-4 px-4 text-xs font-mono font-bold text-gray-600">Approve/Reject</th>
+                <th className="text-left py-4 px-4 text-xs font-mono font-bold text-gray-600">Reset Password</th>
                 <th className="text-left py-4 px-4 cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => handleSort("balance")}>
                   <div className="flex items-center gap-1 text-xs font-mono font-bold text-gray-600">
                     Balance <SortIcon field="balance" />
@@ -531,12 +575,6 @@ const AdminUsers = () => {
                     </td>
                     <td className="py-4 px-4 text-xs font-mono font-semibold text-gray-600">
                       {u.mobileNumber}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs font-mono font-bold">
-                        <Crown className="w-3 h-3" />
-                        {u.role}
-                      </span>
                     </td>
                     <td className="py-4 px-4">
                       <button
@@ -600,6 +638,31 @@ const AdminUsers = () => {
                           disabled={u.status?.toUpperCase() === "REJECTED"}
                         >
                           <XIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={resetPasswordInputs[u.id] || ""}
+                          onChange={(e) =>
+                            setResetPasswordInputs((prev) => ({
+                              ...prev,
+                              [u.id]: e.target.value,
+                            }))
+                          }
+                          placeholder="New password"
+                          className="w-28 bg-gray-50 border-2 border-gray-200 px-2 py-2 text-xs font-mono font-bold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg"
+                          disabled={u.status?.toUpperCase() !== "APPROVED"}
+                        />
+                        <button
+                          onClick={() => handleResetPassword(u.id, u.name)}
+                          className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-all disabled:opacity-50"
+                          title="Reset Password"
+                          disabled={u.status?.toUpperCase() !== "APPROVED"}
+                        >
+                          <KeyRound className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
