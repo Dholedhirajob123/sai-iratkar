@@ -45,11 +45,11 @@ const AdminLayout = () => {
   if (loading || !user || !isAdmin) return null;
 
   const tabs = [
-    { id: "users", label: "Users", icon: Users, path: "/admin/users", color: "blue"  },
-    { id: "games", label: "Games", icon: Gamepad2, path: "/admin/games", color: "green" },
-    { id: "entries", label: "Entries", icon: FileText, path: "/admin/entries", color: "purple" },
-    { id: "history", label: "History", icon: History, path: "/admin/history", color: "orange" },
-    { id: "results", label: "Results", icon: Trophy, path: "/admin/results", color: "yellow" },
+    { id: "users", label: "Users", icon: Users, path: "/admin/users", color: "blue", description: "Manage user accounts" },
+    { id: "games", label: "Games", icon: Gamepad2, path: "/admin/games", color: "green", description: "Manage games and configurations" },
+    { id: "entries", label: "Entries", icon: FileText, path: "/admin/entries", color: "purple", description: "View and manage entries" },
+    { id: "history", label: "History", icon: History, path: "/admin/history", color: "orange", description: "Audit logs and history" },
+    { id: "results", label: "Results", icon: Trophy, path: "/admin/results", color: "yellow", description: "Check results and stats" },
   ];
 
   const currentTab = tabs.find((tab) => location.pathname === tab.path)?.id || "users";
