@@ -377,8 +377,12 @@ const Dashboard = () => {
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <Star className="w-6 h-6 text-white" />
+              <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+                <img 
+                  src="/icons/launchericon-192x192.png" 
+                  alt="Matka King Logo" 
+                  className="w-10 h-10 object-contain"
+                />
               </div>
               <span className="text-lg font-mono font-bold text-gray-900">Menu</span>
             </div>
@@ -392,10 +396,14 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className="p-6 border-b border-gray-100 bg-gradient-to-r ">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-              <User className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 bg-gradient-to-br  rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+              <img 
+                src="/icons/launchericon-192x192.png" 
+                alt="Matka King Logo" 
+                className="w-10 h-10 object-contain"
+              />
             </div>
             <div>
               <p className="text-base font-mono font-bold text-gray-900">{user.name}</p>
@@ -468,8 +476,12 @@ const Dashboard = () => {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl blur-md opacity-50 animate-pulse"></div>
-                <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Star className="w-6 h-6 text-white" />
+                <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                  <img 
+                    src="/icons/launchericon-192x192.png" 
+                    alt="Matka King Logo" 
+                    className="w-9 h-9 object-contain"
+                  />
                   <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
                 </div>
               </div>
@@ -600,8 +612,12 @@ const Dashboard = () => {
           </div>
         ) : games.length === 0 ? (
           <div className="text-center py-20">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-4">
-              <Star className="w-10 h-10 text-gray-400" />
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-4 overflow-hidden">
+              <img 
+                src="/icons/launchericon-192x192.png" 
+                alt="Matka King Logo" 
+                className="w-12 h-12 object-contain"
+              />
             </div>
             <p className="text-base font-mono font-semibold text-gray-600">No games available</p>
             <p className="text-xs font-mono text-gray-400 mt-1">Check back later for new games</p>

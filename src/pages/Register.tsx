@@ -120,9 +120,14 @@ const Register = () => {
         {/* Logo and Brand */}
         <div className="text-center mb-8">
           <div className="relative inline-block">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-xl opacity-30"></div>
-            <div className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl mb-4">
-              <Star className="w-10 h-10 text-white" />
+            <div className="absolute inset-0 bg-gradient-to-r rounded-2xl blur-xl opacity-30"></div>
+            <div className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br rounded-2xl shadow-xl mb-4 overflow-hidden">
+              {/* App Icon Image */}
+              <img 
+                src="/icons/launchericon-192x192.png" 
+                alt="Matka King Logo" 
+                className="w-16 h-16 object-contain"
+              />
               <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400" />
             </div>
           </div>

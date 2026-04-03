@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Search, Filter, TrendingUp, Users, DollarSign, Calendar, Clock, Award } from "lucide-react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { Search, Filter, TrendingUp, Users, DollarSign, Calendar, Clock, Award, Gamepad2, RefreshCw } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getEntriesByGameId, getGames, Game, GameEntry } from "@/lib/gameApi";
 import { useToast } from "@/hooks/use-toast";
@@ -9,25 +9,45 @@ const AdminEntries = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGameType, setSelectedGameType] = useState<string>("all");
+  const [selectedGameName, setSelectedGameName] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
+  
+  // Track if data has been loaded
+  const dataLoadedRef = useRef(false);
 
-  useEffect(() => {
-    loadEntries();
-  }, []);
-
-  const loadEntries = async () => {
+  const loadEntries = async (showRefreshToast = false) => {
+    // Prevent multiple API calls
+    if (dataLoadedRef.current && !showRefreshToast) {
+      return;
+    }
+    
     try {
-      setLoading(true);
+      if (!dataLoadedRef.current) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
 
-      const gamesData = await getGames();
-      setGames(gamesData);
+      // Fetch games and entries in parallel for better performance
+      const [gamesData, allEntriesResponses] = await Promise.all([
+        getGames(),
+        Promise.all(
+          (dataLoadedRef.current ? games : []).map((game) => getEntriesByGameId(game.id))
+        )
+      ]);
 
-      const allEntriesResponses = await Promise.all(
-        gamesData.map((game) => getEntriesByGameId(game.id))
-      );
-
-      const allEntries = allEntriesResponses.flat();
+      // If first time loading games, fetch entries for all games
+      let allEntries: GameEntry[] = [];
+      if (!dataLoadedRef.current) {
+        setGames(gamesData);
+        const entriesPromises = gamesData.map((game) => getEntriesByGameId(game.id));
+        const entriesResponses = await Promise.all(entriesPromises);
+        allEntries = entriesResponses.flat();
+      } else {
+        allEntries = allEntriesResponses.flat();
+      }
 
       const normalizedEntries = allEntries.map((entry) => ({
         ...entry,
@@ -38,6 +58,14 @@ const AdminEntries = () => {
       }));
 
       setEntries(normalizedEntries);
+      dataLoadedRef.current = true;
+
+      if (showRefreshToast) {
+        toast({
+          title: "Refreshed",
+          description: `Loaded ${normalizedEntries.length} entries`,
+        });
+      }
     } catch (error) {
       console.error("Failed to load entries:", error);
       toast({
@@ -47,12 +75,28 @@ const AdminEntries = () => {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  // Load data only once on mount
+  useEffect(() => {
+    loadEntries();
+  }, []);
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    loadEntries(true);
   };
 
   const gameTypes = useMemo(() => {
     const types = new Set(entries.map((e) => e.gameType).filter(Boolean));
     return ["all", ...Array.from(types).sort()];
+  }, [entries]);
+
+  const gameNames = useMemo(() => {
+    const names = new Set(entries.map((e) => e.gameName).filter(Boolean));
+    return ["all", ...Array.from(names).sort()];
   }, [entries]);
 
   const filteredEntries = useMemo(() => {
@@ -70,18 +114,34 @@ const AdminEntries = () => {
 
       const matchesType =
         selectedGameType === "all" || entry.gameType === selectedGameType;
+      
+      const matchesGameName =
+        selectedGameName === "all" || entry.gameName === selectedGameName;
 
-      return matchesSearch && matchesType;
+      return matchesSearch && matchesType && matchesGameName;
     });
-  }, [entries, searchQuery, selectedGameType]);
+  }, [entries, searchQuery, selectedGameType, selectedGameName]);
 
-  const groupedByType = useMemo(() => {
-    const grouped: Record<string, GameEntry[]> = {};
+  // Group by Game Type AND Game Name
+  const groupedByTypeAndGame = useMemo(() => {
+    const grouped: Record<string, { gameName: string; entries: GameEntry[] }[]> = {};
+    
     filteredEntries.forEach((entry) => {
       const type = entry.gameType || "Unknown";
-      if (!grouped[type]) grouped[type] = [];
-      grouped[type].push(entry);
+      const gameName = entry.gameName || "Unknown Game";
+      
+      if (!grouped[type]) {
+        grouped[type] = [];
+      }
+      
+      const existingGameGroup = grouped[type].find(g => g.gameName === gameName);
+      if (existingGameGroup) {
+        existingGameGroup.entries.push(entry);
+      } else {
+        grouped[type].push({ gameName, entries: [entry] });
+      }
     });
+    
     return grouped;
   }, [filteredEntries]);
 
@@ -164,6 +224,7 @@ const AdminEntries = () => {
       {/* Search and Filter Section */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
         <div className="space-y-4">
+          {/* Search Input */}
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -175,27 +236,100 @@ const AdminEntries = () => {
             />
           </div>
 
-          {gameTypes.length > 1 && (
-            <div className="flex items-center gap-3">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <select
-                value={selectedGameType}
-                onChange={(e) => setSelectedGameType(e.target.value)}
-                className="bg-gray-50 border-2 border-gray-200 px-4 py-2 text-xs font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-              >
-                {gameTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type === "all" ? "All Game Types" : type}
-                  </option>
-                ))}
-              </select>
+          {/* Filter Row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Game Name Filter */}
+            {gameNames.length > 1 && (
+              <div className="flex-1 flex items-center gap-3">
+                <Gamepad2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                <select
+                  value={selectedGameName}
+                  onChange={(e) => setSelectedGameName(e.target.value)}
+                  className="flex-1 bg-gray-50 border-2 border-gray-200 px-4 py-2 text-xs font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                >
+                  <option value="all">All Games</option>
+                  {gameNames.filter(name => name !== "all").map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Game Type Filter */}
+            {gameTypes.length > 1 && (
+              <div className="flex-1 flex items-center gap-3">
+                <Filter className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                <select
+                  value={selectedGameType}
+                  onChange={(e) => setSelectedGameType(e.target.value)}
+                  className="flex-1 bg-gray-50 border-2 border-gray-200 px-4 py-2 text-xs font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                >
+                  {gameTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type === "all" ? "All Game Types" : type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Refresh Button */}
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-bold rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+          </div>
+
+          {/* Active Filters Display */}
+          {(selectedGameName !== "all" || selectedGameType !== "all") && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              <span className="text-[10px] font-mono text-gray-500">Active filters:</span>
+              {selectedGameName !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-mono font-semibold">
+                  Game: {selectedGameName}
+                  <button
+                    onClick={() => setSelectedGameName("all")}
+                    className="hover:text-blue-900 ml-1"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {selectedGameType !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-[10px] font-mono font-semibold">
+                  Type: {selectedGameType}
+                  <button
+                    onClick={() => setSelectedGameType("all")}
+                    className="hover:text-purple-900 ml-1"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {(selectedGameName !== "all" || selectedGameType !== "all") && (
+                <button
+                  onClick={() => {
+                    setSelectedGameName("all");
+                    setSelectedGameType("all");
+                  }}
+                  className="text-[10px] font-mono text-red-500 hover:text-red-700"
+                >
+                  Clear all
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Results */}
-      {Object.keys(groupedByType).length === 0 ? (
+      {/* Results - Grouped by Game Type then Game Name */}
+      {Object.keys(groupedByTypeAndGame).length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-2xl mb-4">
             <Search className="w-8 h-8 text-gray-400" />
@@ -209,9 +343,13 @@ const AdminEntries = () => {
         </div>
       ) : (
         <Accordion type="multiple" className="space-y-4">
-          {Object.entries(groupedByType).map(([type, items]) => {
-            const typeTotal = items.reduce((sum, e) => sum + (e.amount || 0), 0);
-            const uniqueNumbers = new Set(items.map(e => e.number)).size;
+          {Object.entries(groupedByTypeAndGame).map(([type, gameGroups]) => {
+            const typeTotal = gameGroups.reduce(
+              (sum, group) => sum + group.entries.reduce((s, e) => s + (e.amount || 0), 0),
+              0
+            );
+            const totalEntries = gameGroups.reduce((sum, group) => sum + group.entries.length, 0);
+            const uniqueNumbers = new Set(gameGroups.flatMap(g => g.entries.map(e => e.number))).size;
 
             return (
               <AccordionItem
@@ -230,7 +368,7 @@ const AdminEntries = () => {
                     <div className="flex gap-6 text-xs">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-3 h-3 text-gray-500" />
-                        <span className="font-semibold text-gray-600">{items.length} entries</span>
+                        <span className="font-semibold text-gray-600">{totalEntries} entries</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <DollarSign className="w-3 h-3 text-gray-500" />
@@ -245,51 +383,75 @@ const AdminEntries = () => {
                 </AccordionTrigger>
 
                 <AccordionContent className="px-5 pb-5 pt-2">
-                  {getNumberGroups(items).map(([num, data]) => (
-                    <div
-                      key={num}
-                      className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mb-4 border border-gray-200 hover:shadow-md transition-all duration-300 hover:border-blue-200"
-                    >
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-blue-100 w-12 h-12 rounded-xl flex items-center justify-center">
-                            <span className="font-mono font-black text-blue-600 text-xl">{num}</span>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-mono text-gray-500">Total Bets</p>
-                            <p className="text-xs font-mono font-bold text-gray-900">{data.entries.length} bets</p>
-                          </div>
+                  {gameGroups.map((gameGroup) => {
+                    const gameTotal = gameGroup.entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+                    
+                    return (
+                      <div key={gameGroup.gameName} className="mb-6 last:mb-0">
+                        <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-blue-200">
+                          <Gamepad2 className="w-4 h-4 text-blue-600" />
+                          <h4 className="font-mono font-bold text-base text-blue-800">
+                            {gameGroup.gameName}
+                          </h4>
+                          <span className="text-xs font-mono text-gray-500 ml-auto">
+                            {gameGroup.entries.length} bets | ₹{gameTotal.toLocaleString()}
+                          </span>
                         </div>
-                        <div className="text-right">
-                          <p className="text-[10px] font-mono text-gray-500">Total Amount</p>
-                          <p className="text-lg font-mono font-bold text-blue-600">₹{data.total.toLocaleString()}</p>
-                        </div>
-                      </div>
 
-                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
-                        {data.entries.map((entry, index) => (
+                        {getNumberGroups(gameGroup.entries).map(([num, data]) => (
                           <div
-                            key={entry.id ?? `${num}-${index}`}
-                            className="group relative inline-flex items-center gap-2 bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-help"
-                            title={`${entry.gameName || "Unknown Game"} - ${
-                              entry.createdAt
-                                ? new Date(entry.createdAt).toLocaleString()
-                                : "No date"
-                            }`}
+                            key={num}
+                            className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mb-4 border border-gray-200 hover:shadow-md transition-all duration-300 hover:border-blue-200"
                           >
-                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                              <Users className="w-3 h-3 text-gray-600" />
+                            <div className="flex justify-between items-center mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="bg-blue-100 w-12 h-12 rounded-xl flex items-center justify-center">
+                                  <span className="font-mono font-black text-blue-600 text-xl">{num}</span>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-mono text-gray-500">Total Bets</p>
+                                  <p className="text-xs font-mono font-bold text-gray-900">{data.entries.length} bets</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] font-mono text-gray-500">Total Amount</p>
+                                <p className="text-lg font-mono font-bold text-blue-600">₹{data.total.toLocaleString()}</p>
+                              </div>
                             </div>
-                            <span className="text-xs font-mono font-bold text-gray-800">{entry.playerName || "Unknown"}</span>
-                            <span className="text-xs font-mono font-bold text-blue-600">₹{entry.amount}</span>
-                            <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Clock className="w-3 h-3 text-gray-400" />
+
+                            <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
+                              {data.entries.map((entry, index) => (
+                                <div
+                                  key={entry.id ?? `${num}-${index}`}
+                                  className="group relative inline-flex flex-col bg-white border border-gray-200 px-3 py-2 rounded-lg hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-help min-w-[160px]"
+                                  title={`${entry.gameName} - ${
+                                    entry.createdAt
+                                      ? new Date(entry.createdAt).toLocaleString()
+                                      : "No date"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                        <Users className="w-3 h-3 text-gray-600" />
+                                      </div>
+                                      <span className="text-xs font-mono font-bold text-gray-800 truncate max-w-[100px]">
+                                        {entry.playerName || "Unknown"}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs font-mono font-bold text-blue-600">₹{entry.amount}</span>
+                                  </div>
+                                  <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Clock className="w-3 h-3 text-gray-400" />
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         ))}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </AccordionContent>
               </AccordionItem>
             );

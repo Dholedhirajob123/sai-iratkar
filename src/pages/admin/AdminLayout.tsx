@@ -81,10 +81,15 @@ const AdminLayout = () => {
               </button>
               
               <div className="flex items-center gap-3">
+                {/* Logo Icon with Image */}
                 <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl blur-md opacity-50"></div>
-                  <div className="relative w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <Star className="w-5 h-5 text-white" />
+                  {/* Remove the gradient blur and use image instead */}
+                  <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden bg-gradient-to-br ">
+                    <img 
+                      src="/icons/launchericon-192x192.png" 
+                      alt="Matka King Logo" 
+                      className="w-8 h-8 object-contain"
+                    />
                   </div>
                 </div>
                 <div className="hidden sm:block">
@@ -98,16 +103,20 @@ const AdminLayout = () => {
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-3">
-          
-
               {/* User Menu */}
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-md">
-                    <UserCircle className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-md overflow-hidden">
+                    {user?.name ? (
+                      <span className="text-white font-mono font-bold text-sm">
+                        {user.name.charAt(0).toUpperCase()}
+                      </span>
+                    ) : (
+                      <UserCircle className="w-5 h-5 text-white" />
+                    )}
                   </div>
                   <div className="hidden sm:block text-left">
                     <p className="text-xs font-mono font-semibold text-gray-900">{user.name}</p>
@@ -151,8 +160,12 @@ const AdminLayout = () => {
             <div className="p-5 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                    <Star className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                    <img 
+                      src="/icons/launchericon-192x192.png" 
+                      alt="Matka King Logo" 
+                      className="w-8 h-8 object-contain"
+                    />
                   </div>
                   <span className="text-base font-mono font-bold text-gray-900">Admin Panel</span>
                 </div>

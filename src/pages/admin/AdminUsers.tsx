@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Search,
@@ -47,12 +47,12 @@ const AdminUsers = () => {
 
   const token = localStorage.getItem("token");
 
-  const getHeaders = () => ({
+  const getHeaders = useCallback(() => ({
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
-  });
+  }), [token]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -73,20 +73,21 @@ const AdminUsers = () => {
       );
 
       setUsers(filteredData);
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to load users";
       toast({
         title: "Error",
-        description: error.message || "Unable to load users",
+        description: message,
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast, getHeaders]);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   const handleApprove = async (id: number, name: string) => {
     try {
@@ -107,10 +108,11 @@ const AdminUsers = () => {
       });
 
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to approve user";
       toast({
         title: "Error",
-        description: error.message || "Unable to approve user",
+        description: message,
         variant: "destructive",
       });
     }
@@ -135,10 +137,11 @@ const AdminUsers = () => {
       });
 
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to reject user";
       toast({
         title: "Error",
-        description: error.message || "Unable to reject user",
+        description: message,
         variant: "destructive",
       });
     }
@@ -170,10 +173,11 @@ const AdminUsers = () => {
       });
 
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to update permission";
       toast({
         title: "Error",
-        description: error.message || "Unable to update permission",
+        description: message,
         variant: "destructive",
       });
     }
@@ -211,10 +215,11 @@ const AdminUsers = () => {
 
       setResetPasswordInputs((prev) => ({ ...prev, [id]: "" }));
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to reset password";
       toast({
         title: "Error",
-        description: error.message || "Unable to reset password",
+        description: message,
         variant: "destructive",
       });
     }
@@ -245,10 +250,11 @@ const AdminUsers = () => {
       });
 
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to delete user";
       toast({
         title: "Error",
-        description: error.message || "Unable to delete user",
+        description: message,
         variant: "destructive",
       });
     }
@@ -288,10 +294,11 @@ const AdminUsers = () => {
 
       setBalanceInputs((prev) => ({ ...prev, [id]: "" }));
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to add balance";
       toast({
         title: "Error",
-        description: error.message || "Unable to add balance",
+        description: message,
         variant: "destructive",
       });
     }
@@ -331,10 +338,11 @@ const AdminUsers = () => {
 
       setBalanceInputs((prev) => ({ ...prev, [id]: "" }));
       fetchUsers();
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to remove balance";
       toast({
         title: "Error",
-        description: error.message || "Unable to remove balance",
+        description: message,
         variant: "destructive",
       });
     }

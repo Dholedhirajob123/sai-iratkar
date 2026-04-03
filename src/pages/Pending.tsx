@@ -8,9 +8,14 @@ const Pending = () => {
         {/* Logo and Brand */}
         <div className="text-center mb-8">
           <div className="relative inline-block">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
-            <div className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl mb-4">
-              <Star className="w-10 h-10 text-white" />
+            <div className="absolute inset-0 bg-gradient-to-r rounded-2xl blur-xl opacity-30 animate-pulse"></div>
+            <div className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br  rounded-2xl shadow-xl mb-4 overflow-hidden">
+              {/* App Icon Image */}
+              <img 
+                src="/icons/launchericon-192x192.png" 
+                alt="Matka King Logo" 
+                className="w-16 h-16 object-contain"
+              />
               <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
             </div>
           </div>
@@ -24,7 +29,8 @@ const Pending = () => {
             {/* Icon */}
             <div className="relative inline-block mb-6">
               <div className="absolute inset-0 bg-yellow-400 rounded-full blur-xl opacity-30 animate-pulse"></div>
-              <div className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl shadow-lg">
+              <div className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl shadow-lg overflow-hidden">
+                {/* Optional: Add a small icon image here or keep the clock */}
                 <Clock className="w-10 h-10 text-white" />
               </div>
             </div>
@@ -66,13 +72,8 @@ const Pending = () => {
           </div>
         </div>
 
-        {/* Status Badge */}
-        <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-50 rounded-full border border-yellow-200">
-            <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></div>
-            <span className="text-[9px] font-mono font-semibold text-yellow-700">Awaiting Approval</span>
-          </div>
-        </div>
+        
+     
       </div>
     </div>
   );

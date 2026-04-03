@@ -4,17 +4,18 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import PWAInstall from "@/components/PWAInstall";
+import OfflineIndicator from "@/components/OfflineIndicator";
+import Offline from "@/pages/Offline";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Pending from "./pages/Pending";
 import Dashboard from "./pages/Dashboard";
-// import AdminPanel from "./pages/AdminPanel"; // You can remove this
 import WalletPage from "./pages/Wallet";
 import BetHistory from "./pages/BetHistory";
 import NotFound from "./pages/NotFound";
 
-// Import admin components
 import { 
   AdminLayout, 
   AdminUsers, 
@@ -33,6 +34,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <PWAInstall />
+          <OfflineIndicator />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
@@ -41,15 +44,15 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/history" element={<BetHistory />} />
+            <Route path="/offline" element={<Offline />} />
             
-            {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminUsers />} /> {/* /admin */}
-              <Route path="users" element={<AdminUsers />} /> {/* /admin/users */}
-              <Route path="games" element={<AdminGames />} /> {/* /admin/games */}
-              <Route path="entries" element={<AdminEntries />} /> {/* /admin/entries */}
-              <Route path="history" element={<AdminHistory />} /> {/* /admin/history */}
-              <Route path="results" element={<AdminResults />} /> {/* /admin/results */}
+              <Route index element={<AdminUsers />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="games" element={<AdminGames />} />
+              <Route path="entries" element={<AdminEntries />} />
+              <Route path="history" element={<AdminHistory />} />
+              <Route path="results" element={<AdminResults />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />

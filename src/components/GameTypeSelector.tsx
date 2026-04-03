@@ -528,15 +528,7 @@ const GameTypeSelector = ({
             <span className="font-mono text-sm font-semibold">Back</span>
           </button>
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={handleShowGameInfo}
-              className="text-blue-600 hover:text-blue-700 transition-all duration-200 hover:scale-105 flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-blue-50"
-              title="View Game Info"
-            >
-              <span className="text-lg">ℹ️</span>
-              <span className="text-xs font-mono font-semibold">Info</span>
-            </button>
+          
             <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl px-4 py-2 shadow-md">
               <p className="text-[10px] font-mono text-blue-100">Balance</p>
               <p className="text-lg font-mono font-bold text-white">₹{userBalance}</p>
