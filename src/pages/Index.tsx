@@ -18,15 +18,25 @@ const Index = () => {
   }, [user, loading, navigate]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="text-center animate-pulse-slow">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-card border-2 border-primary/40 rounded-lg mb-6">
-          <Star className="w-10 h-10 text-primary" />
+        <div className="relative inline-block">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
+          <div className="relative inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl mb-6 overflow-hidden">
+            <img 
+              src="/icons/launchericon-192x192.png" 
+              alt="Matka King Logo" 
+              className="w-16 h-16 object-contain"
+            />
+          </div>
         </div>
-        <h1 className="text-3xl font-bold font-mono tracking-tight text-foreground mb-4">
-          STAR MATKA
+        <h1 className="text-3xl font-mono font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+          MATKA KING
         </h1>
-        <p className="font-mono text-muted-foreground text-sm">Loading...</p>
+        <p className="font-mono text-gray-500 text-sm">Loading...</p>
+        <div className="mt-4 flex justify-center">
+          <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+        </div>
       </div>
     </div>
   );
