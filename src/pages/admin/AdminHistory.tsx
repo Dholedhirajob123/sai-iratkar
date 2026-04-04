@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Search, Filter, TrendingUp, DollarSign, Users, Calendar, Clock, Award, BarChart3, PieChart, Download, Eye, ChevronRight } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Search, Filter, TrendingUp, DollarSign, Users, Calendar, Clock, Award, BarChart3, PieChart, Download, Eye, ChevronRight, RefreshCw } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -13,6 +13,7 @@ import {
   GameEntry,
   Transaction,
 } from "@/lib/gameApi";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminHistory = () => {
   const [entries, setEntries] = useState<GameEntry[]>([]);
@@ -20,40 +21,89 @@ const AdminHistory = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"entries" | "transactions">("entries");
   const [selectedDateRange, setSelectedDateRange] = useState<"all" | "today" | "week" | "month">("all");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const { toast } = useToast();
+  
+  // Track if initial data has been loaded
+  const initialLoadRef = useRef(false);
+  const isFetchingRef = useRef(false);
 
   // =========================
-  // FETCH DATA
+  // FETCH DATA - Single API Call
   // =========================
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [entriesData, transactionsData] = await Promise.all([
-          getAllGameEntries(),
-          getAllTransactions(),
-        ]);
-
-        setEntries(
-          entriesData.sort(
-            (a, b) =>
-              new Date(b.createdAt || "").getTime() -
-              new Date(a.createdAt || "").getTime()
-          )
-        );
-
-        setTransactions(
-          transactionsData.sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() -
-              new Date(a.createdAt).getTime()
-          )
-        );
-      } catch (err) {
-        console.error("Error loading history:", err);
+  const fetchData = useCallback(async (showRefreshToast = false) => {
+    // Prevent multiple simultaneous calls
+    if (isFetchingRef.current) {
+      return;
+    }
+    
+    // Skip if already loaded and not a manual refresh
+    if (initialLoadRef.current && !showRefreshToast) {
+      return;
+    }
+    
+    try {
+      isFetchingRef.current = true;
+      
+      if (!showRefreshToast) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
       }
-    };
+      
+      const [entriesData, transactionsData] = await Promise.all([
+        getAllGameEntries(),
+        getAllTransactions(),
+      ]);
 
+      setEntries(
+        entriesData.sort(
+          (a, b) =>
+            new Date(b.createdAt || "").getTime() -
+            new Date(a.createdAt || "").getTime()
+        )
+      );
+
+      setTransactions(
+        transactionsData.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        )
+      );
+      
+      initialLoadRef.current = true;
+      
+      if (showRefreshToast) {
+        toast({
+          title: "Refreshed",
+          description: `Loaded ${entriesData.length} entries and ${transactionsData.length} transactions`,
+        });
+      }
+    } catch (err) {
+      console.error("Error loading history:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load history data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+      isFetchingRef.current = false;
+    }
+  }, [toast]);
+
+  // Load data only once on mount
+  useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  // Manual refresh handler
+  const handleRefresh = () => {
+    fetchData(true);
+  };
 
   // =========================
   // FILTERS
@@ -90,7 +140,7 @@ const AdminHistory = () => {
     return matchesSearch && matchesDate;
   });
 
-  const filteredTransactions = transactions.filter((t: any) => {
+  const filteredTransactions = transactions.filter((t) => {
     const text =
       (t.user?.name || "") +
       (t.type || "");
@@ -105,7 +155,7 @@ const AdminHistory = () => {
   // =========================
   const grouped: Record<string, GameEntry[]> = {};
 
-  filteredEntries.forEach((e: any) => {
+  filteredEntries.forEach((e) => {
     const userName = e.user?.name || "Unknown";
     if (!grouped[userName]) grouped[userName] = [];
     grouped[userName].push(e);
@@ -146,8 +196,34 @@ const AdminHistory = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <BarChart3 className="w-6 h-6 text-blue-600 animate-pulse" />
+          </div>
+        </div>
+        <p className="mt-4 font-mono text-sm text-gray-500">Loading history...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Refresh Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-bold rounded-lg flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
+      </div>
+
       {/* Stats Cards for Game History */}
       {activeTab === "entries" && filteredEntries.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -478,7 +554,7 @@ const AdminHistory = () => {
                   </thead>
 
                   <tbody>
-                    {filteredTransactions.map((t: any, index) => (
+                    {filteredTransactions.map((t, index) => (
                       <tr
                         key={t.id}
                         className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50/30 transition-all duration-200`}

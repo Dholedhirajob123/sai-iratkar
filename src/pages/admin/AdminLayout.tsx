@@ -83,8 +83,7 @@ const AdminLayout = () => {
               <div className="flex items-center gap-3">
                 {/* Logo Icon with Image */}
                 <div className="relative">
-                  {/* Remove the gradient blur and use image instead */}
-                  <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden bg-gradient-to-br ">
+                  <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600">
                     <img 
                       src="/icons/launchericon-192x192.png" 
                       alt="Matka King Logo" 

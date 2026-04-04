@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getGames,
   createGame,
@@ -36,7 +36,15 @@ import {
 } from "lucide-react";
 
 // Valid double-digit center numbers
-const VALID_DOUBLE_DIGIT_CENTER = ["11", "22", "33", "44", "55", "66", "77", "88", "99", "16", "27", "38", "49", "50", "61", "72", "83", "05"];
+const VALID_DOUBLE_DIGIT_CENTER = ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+  "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+  "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
+  "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+  "51", "52", "53", "54", "55", "56", "57", "58", "59", "60",
+  "61", "62", "63", "64", "65", "66", "67", "68", "69", "70",
+  "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
+  "81", "82", "83", "84", "85", "86", "87", "88", "89", "90",
+  "91", "92", "93", "94", "95", "96", "97", "98", "99"];
 
 // Valid Numbers List Component - Modern Design
 const ValidNumbersList = () => {
@@ -144,6 +152,7 @@ const AdminGames = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "active" | "inactive">("all");
 
   const [newGame, setNewGame] = useState<Partial<Game>>({
@@ -157,10 +166,10 @@ const AdminGames = () => {
   });
 
   const { toast } = useToast();
-
-  useEffect(() => {
-    loadGames();
-  }, []);
+  
+  // Track if initial data has been loaded
+  const initialLoadRef = useRef(false);
+  const isFetchingRef = useRef(false);
 
   const getGameActiveValue = (game: Partial<Game>) => {
     return typeof game.active === "boolean"
@@ -170,11 +179,36 @@ const AdminGames = () => {
       : false;
   };
 
-  const loadGames = async () => {
+  const loadGames = useCallback(async (showRefreshToast = false) => {
+    // Prevent multiple simultaneous calls
+    if (isFetchingRef.current) {
+      return;
+    }
+    
+    // Skip if already loaded and not a manual refresh
+    if (initialLoadRef.current && !showRefreshToast) {
+      return;
+    }
+    
     try {
-      setLoading(true);
+      isFetchingRef.current = true;
+      
+      if (!showRefreshToast) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+      
       const updatedGames = await getGames();
       setGames(updatedGames);
+      initialLoadRef.current = true;
+      
+      if (showRefreshToast) {
+        toast({
+          title: "Refreshed",
+          description: `Loaded ${updatedGames.length} games`,
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -183,7 +217,19 @@ const AdminGames = () => {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      isFetchingRef.current = false;
     }
+  }, [toast]);
+
+  // Load data only once on mount
+  useEffect(() => {
+    loadGames();
+  }, [loadGames]);
+
+  // Manual refresh handler
+  const handleRefresh = () => {
+    loadGames(true);
   };
 
   const filteredGames = games.filter((game) => {
@@ -297,7 +343,7 @@ const AdminGames = () => {
         active: getGameActiveValue(editData),
       });
 
-      await loadGames();
+      await loadGames(true); // Refresh after update
       setEditing(null);
       setEditData(null);
 
@@ -321,7 +367,7 @@ const AdminGames = () => {
 
     try {
       await deleteGame(gameId);
-      await loadGames();
+      await loadGames(true); // Refresh after delete
 
       toast({
         title: "Game Deleted",
@@ -388,7 +434,7 @@ const AdminGames = () => {
         active: true,
       });
 
-      await loadGames();
+      await loadGames(true); // Refresh after add
 
       setNewGame({
         name: "",
@@ -418,7 +464,7 @@ const AdminGames = () => {
   const handleToggleGameStatus = async (gameId: number) => {
     try {
       const updatedGame = await toggleGameStatus(gameId);
-      await loadGames();
+      await loadGames(true); // Refresh after status change
 
       const active = getGameActiveValue(updatedGame);
 
@@ -531,6 +577,15 @@ const AdminGames = () => {
               <option value="active">Active Only</option>
               <option value="inactive">Inactive Only</option>
             </select>
+            
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-mono text-sm font-bold rounded-xl flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
           </div>
           
           <button

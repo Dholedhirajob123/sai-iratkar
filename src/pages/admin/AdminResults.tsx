@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Search, Trophy, Calendar, TrendingUp, Award, Users, DollarSign, Clock, Filter, BarChart3, Star, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { Search, Trophy, Calendar, TrendingUp, Award, Users, DollarSign, Clock, Filter, BarChart3, Star, Sparkles, RefreshCw } from "lucide-react";
 import { getResults, getGames, GameResult, Game } from "@/lib/gameApi";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,15 +10,32 @@ const AdminResults = () => {
   const [selectedGame, setSelectedGame] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { toast } = useToast();
+  
+  // Track if initial data has been loaded
+  const initialLoadRef = useRef(false);
+  const isFetchingRef = useRef(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async (showRefreshToast = false) => {
+    // Prevent multiple simultaneous calls
+    if (isFetchingRef.current) {
+      return;
+    }
+    
+    // Skip if already loaded and not a manual refresh
+    if (initialLoadRef.current && !showRefreshToast) {
+      return;
+    }
+    
     try {
-      setLoading(true);
+      isFetchingRef.current = true;
+      
+      if (!showRefreshToast) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
 
       const [resultsData, gamesData] = await Promise.all([
         getResults(),
@@ -33,6 +50,14 @@ const AdminResults = () => {
 
       setResults(sortedResults);
       setGames(gamesData);
+      initialLoadRef.current = true;
+      
+      if (showRefreshToast) {
+        toast({
+          title: "Refreshed",
+          description: `Loaded ${sortedResults.length} results`,
+        });
+      }
     } catch (error) {
       console.error("Failed to load results:", error);
       toast({
@@ -42,7 +67,19 @@ const AdminResults = () => {
       });
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      isFetchingRef.current = false;
     }
+  }, [toast]);
+
+  // Load data only once on mount
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Manual refresh handler
+  const handleRefresh = () => {
+    loadData(true);
   };
 
   const gameTypes = useMemo(() => {
@@ -120,14 +157,26 @@ const AdminResults = () => {
     <div className="space-y-6">
       {/* Header with Stats */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-6 text-white shadow-xl">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
-            <Trophy className="w-8 h-8" />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
+              <Trophy className="w-8 h-8" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-mono font-black">Results Dashboard</h2>
+              <p className="text-xs font-mono text-blue-100 mt-1">Track and manage declared results</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-mono font-black">Results Dashboard</h2>
-            <p className="text-xs font-mono text-blue-100 mt-1">Track and manage declared results</p>
-          </div>
+          
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-mono text-xs font-bold rounded-lg flex items-center gap-2 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
