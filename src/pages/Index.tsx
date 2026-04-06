@@ -25,13 +25,13 @@ const Index = () => {
           <div className="relative inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl mb-6 overflow-hidden">
             <img 
               src="/icons/launchericon-192x192.png" 
-              alt="Matka King Logo" 
+              alt="Si King Logo" 
               className="w-16 h-16 object-contain"
             />
           </div>
         </div>
         <h1 className="text-3xl font-mono font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-          MATKA KING
+          Si King
         </h1>
         <p className="font-mono text-gray-500 text-sm">Loading...</p>
         <div className="mt-4 flex justify-center">

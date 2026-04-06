@@ -32,7 +32,8 @@ import {
   Info,
   X,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Palette
 } from "lucide-react";
 
 // Valid double-digit center numbers
@@ -46,7 +47,61 @@ const VALID_DOUBLE_DIGIT_CENTER = ["10", "11", "12", "13", "14", "15", "16", "17
   "81", "82", "83", "84", "85", "86", "87", "88", "89", "90",
   "91", "92", "93", "94", "95", "96", "97", "98", "99"];
 
-// Valid Numbers List Component - Modern Design
+// Color Picker Component
+const ColorPicker = ({ 
+  color, 
+  onChange, 
+  label 
+}: { 
+  color: string; 
+  onChange: (color: string) => void; 
+  label: string;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={pickerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-gray-200 rounded-lg hover:border-blue-400 transition-all duration-200"
+      >
+        <div className="w-6 h-6 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: color }} />
+        <span className="text-xs font-mono text-gray-600">{label}</span>
+        <Palette className="w-3 h-3 text-gray-400" />
+      </button>
+      {isOpen && (
+        <div className="absolute z-50 mt-2 p-3 bg-white rounded-xl shadow-2xl border border-gray-200">
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-32 h-10 rounded cursor-pointer"
+          />
+          <input
+            type="text"
+            value={color}
+            onChange={(e) => onChange(e.target.value)}
+            className="mt-2 w-full px-2 py-1 text-xs font-mono border border-gray-200 rounded"
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Valid Numbers List Component
 const ValidNumbersList = () => {
   const [showList, setShowList] = useState(false);
 
@@ -79,7 +134,7 @@ const ValidNumbersList = () => {
   );
 };
 
-// Center Numbers List Component - Modern Design with Validation
+// Center Numbers List Component
 const CenterNumbersList = () => {
   const [showList, setShowList] = useState(false);
   const centerNumbers = getValidCenterNumbers();
@@ -163,11 +218,16 @@ const AdminGames = () => {
     openTime: "00:00",
     closeTime: "00:00",
     active: true,
+    leftNumberColor: "#000000",
+    leftNumberBgColor: "#f3f4f6",
+    centerNumberColor: "#000000",
+    centerNumberBgColor: "#f3f4f6",
+    rightNumberColor: "#000000",
+    rightNumberBgColor: "#f3f4f6",
   });
 
   const { toast } = useToast();
   
-  // Track if initial data has been loaded
   const initialLoadRef = useRef(false);
   const isFetchingRef = useRef(false);
 
@@ -180,12 +240,10 @@ const AdminGames = () => {
   };
 
   const loadGames = useCallback(async (showRefreshToast = false) => {
-    // Prevent multiple simultaneous calls
     if (isFetchingRef.current) {
       return;
     }
     
-    // Skip if already loaded and not a manual refresh
     if (initialLoadRef.current && !showRefreshToast) {
       return;
     }
@@ -222,12 +280,10 @@ const AdminGames = () => {
     }
   }, [toast]);
 
-  // Load data only once on mount
   useEffect(() => {
     loadGames();
   }, [loadGames]);
 
-  // Manual refresh handler
   const handleRefresh = () => {
     loadGames(true);
   };
@@ -241,7 +297,6 @@ const AdminGames = () => {
     return matchesSearch && matchesFilter;
   });
 
-  // Validate center number with red color for specific double digits
   const validateCenterNumberWithColor = (centerNum: string) => {
     if (centerNum.length === 2) {
       if (VALID_DOUBLE_DIGIT_CENTER.includes(centerNum)) {
@@ -257,6 +312,12 @@ const AdminGames = () => {
     setEditData({
       ...g,
       active: getGameActiveValue(g),
+      leftNumberColor: g.leftNumberColor || "#000000",
+      leftNumberBgColor: g.leftNumberBgColor || "#f3f4f6",
+      centerNumberColor: g.centerNumberColor || "#000000",
+      centerNumberBgColor: g.centerNumberBgColor || "#f3f4f6",
+      rightNumberColor: g.rightNumberColor || "#000000",
+      rightNumberBgColor: g.rightNumberBgColor || "#f3f4f6",
     });
   };
 
@@ -311,7 +372,6 @@ const AdminGames = () => {
       return;
     }
 
-    // Validate center number with special double-digit validation
     const centerValidation = validateCenterNumberWithColor(editData.centerNumber);
     if (!centerValidation.isValid && editData.centerNumber !== "*") {
       toast({
@@ -341,9 +401,15 @@ const AdminGames = () => {
         openTime: editData.openTime,
         closeTime: editData.closeTime,
         active: getGameActiveValue(editData),
+        leftNumberColor: editData.leftNumberColor,
+        leftNumberBgColor: editData.leftNumberBgColor,
+        centerNumberColor: editData.centerNumberColor,
+        centerNumberBgColor: editData.centerNumberBgColor,
+        rightNumberColor: editData.rightNumberColor,
+        rightNumberBgColor: editData.rightNumberBgColor,
       });
 
-      await loadGames(true); // Refresh after update
+      await loadGames(true);
       setEditing(null);
       setEditData(null);
 
@@ -367,7 +433,7 @@ const AdminGames = () => {
 
     try {
       await deleteGame(gameId);
-      await loadGames(true); // Refresh after delete
+      await loadGames(true);
 
       toast({
         title: "Game Deleted",
@@ -402,7 +468,6 @@ const AdminGames = () => {
       return;
     }
 
-    // Validate center number with special double-digit validation
     const centerValidation = validateCenterNumberWithColor(newGame.centerNumber || "*");
     if (!centerValidation.isValid && newGame.centerNumber !== "*") {
       toast({
@@ -432,9 +497,15 @@ const AdminGames = () => {
         openTime: newGame.openTime || "00:00",
         closeTime: newGame.closeTime || "00:00",
         active: true,
+        leftNumberColor: newGame.leftNumberColor || "#000000",
+        leftNumberBgColor: newGame.leftNumberBgColor || "#f3f4f6",
+        centerNumberColor: newGame.centerNumberColor || "#000000",
+        centerNumberBgColor: newGame.centerNumberBgColor || "#f3f4f6",
+        rightNumberColor: newGame.rightNumberColor || "#000000",
+        rightNumberBgColor: newGame.rightNumberBgColor || "#f3f4f6",
       });
 
-      await loadGames(true); // Refresh after add
+      await loadGames(true);
 
       setNewGame({
         name: "",
@@ -444,6 +515,12 @@ const AdminGames = () => {
         openTime: "00:00",
         closeTime: "00:00",
         active: true,
+        leftNumberColor: "#000000",
+        leftNumberBgColor: "#f3f4f6",
+        centerNumberColor: "#000000",
+        centerNumberBgColor: "#f3f4f6",
+        rightNumberColor: "#000000",
+        rightNumberBgColor: "#f3f4f6",
       });
 
       setShowAddForm(false);
@@ -464,7 +541,7 @@ const AdminGames = () => {
   const handleToggleGameStatus = async (gameId: number) => {
     try {
       const updatedGame = await toggleGameStatus(gameId);
-      await loadGames(true); // Refresh after status change
+      await loadGames(true);
 
       const active = getGameActiveValue(updatedGame);
 
@@ -485,17 +562,6 @@ const AdminGames = () => {
     total: games.length,
     active: games.filter(g => getGameActiveValue(g)).length,
     inactive: games.filter(g => !getGameActiveValue(g)).length,
-  };
-
-  // Function to get center number styling with red color for special double digits
-  const getCenterNumberStyle = (centerNum: string) => {
-    if (VALID_DOUBLE_DIGIT_CENTER.includes(centerNum)) {
-      return "text-red-600 font-black";
-    }
-    if (centerNum.length === 1 || centerNum === "*") {
-      return "text-blue-600 font-black";
-    }
-    return "text-gray-800 font-bold";
   };
 
   if (loading && games.length === 0) {
@@ -600,6 +666,12 @@ const AdminGames = () => {
                   openTime: "00:00",
                   closeTime: "00:00",
                   active: true,
+                  leftNumberColor: "#000000",
+                  leftNumberBgColor: "#f3f4f6",
+                  centerNumberColor: "#000000",
+                  centerNumberBgColor: "#f3f4f6",
+                  rightNumberColor: "#000000",
+                  rightNumberBgColor: "#f3f4f6",
                 });
               }
             }}
@@ -643,113 +715,126 @@ const AdminGames = () => {
                 <label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2">
                   LEFT NUMBER
                 </label>
-                <div className="relative">
-                  <input
-                    value={newGame.leftNumber}
-                    onChange={(e) => setNewGame({ ...newGame, leftNumber: e.target.value })}
-                    placeholder="Left (e.g., 128)"
-                    maxLength={3}
-                    className={`w-full bg-gray-50 border-2 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none rounded-xl ${
-                      newGame.leftNumber &&
-                      !isValidGameNumber(newGame.leftNumber, "left") &&
-                      newGame.leftNumber !== "***"
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-gray-200 focus:border-blue-500"
-                    }`}
-                  />
-                  {newGame.leftNumber &&
-                    !isValidGameNumber(newGame.leftNumber, "left") &&
-                    newGame.leftNumber !== "***" && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <AlertCircle className="w-4 h-4 text-red-500" />
-                      </div>
-                    )}
-                </div>
-                {newGame.leftNumber &&
-                  !isValidGameNumber(newGame.leftNumber, "left") &&
-                  newGame.leftNumber !== "***" && (
-                    <p className="text-[8px] font-mono text-red-600 mt-1">Invalid number</p>
-                  )}
+                <input
+                  value={newGame.leftNumber}
+                  onChange={(e) => setNewGame({ ...newGame, leftNumber: e.target.value })}
+                  placeholder="Left (e.g., 128)"
+                  maxLength={3}
+                  className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl"
+                />
               </div>
 
               <div>
                 <label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2">
                   CENTER NUMBER
                 </label>
-                <div className="relative">
-                  <input
-                    value={newGame.centerNumber}
-                    onChange={(e) => setNewGame({ ...newGame, centerNumber: e.target.value })}
-                    placeholder="Center (0-9, or specific double digits)"
-                    maxLength={2}
-                    className={`w-full bg-gray-50 border-2 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none rounded-xl ${
-                      newGame.centerNumber && 
-                      newGame.centerNumber.length === 2 && 
-                      !VALID_DOUBLE_DIGIT_CENTER.includes(newGame.centerNumber) &&
-                      newGame.centerNumber !== "*"
-                        ? "border-red-400 focus:border-red-500 bg-red-50"
-                        : "border-gray-200 focus:border-blue-500"
-                    }`}
-                  />
-                  {newGame.centerNumber && 
-                    newGame.centerNumber.length === 2 && 
-                    !VALID_DOUBLE_DIGIT_CENTER.includes(newGame.centerNumber) &&
-                    newGame.centerNumber !== "*" && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <AlertCircle className="w-4 h-4 text-red-500" />
-                      </div>
-                    )}
-                </div>
-                {newGame.centerNumber && 
-                  newGame.centerNumber.length === 2 && 
-                  !VALID_DOUBLE_DIGIT_CENTER.includes(newGame.centerNumber) &&
-                  newGame.centerNumber !== "*" && (
-                    <p className="text-[8px] font-mono text-red-600 mt-1">
-                      Invalid! Valid double digits: {VALID_DOUBLE_DIGIT_CENTER.join(", ")}
-                    </p>
-                  )}
-                {VALID_DOUBLE_DIGIT_CENTER.includes(newGame.centerNumber) && (
-                  <p className="text-[8px] font-mono text-red-500 mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-2.5 h-2.5" />
-                    This number will appear in RED
-                  </p>
-                )}
-                <p className="text-[8px] font-mono text-gray-500 mt-1">
-                  Single digits (0-9), specific double digits, or *
-                </p>
+                <input
+                  value={newGame.centerNumber}
+                  onChange={(e) => setNewGame({ ...newGame, centerNumber: e.target.value })}
+                  placeholder="Center (0-9, or specific double digits)"
+                  maxLength={2}
+                  className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl"
+                />
               </div>
 
               <div>
                 <label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2">
                   RIGHT NUMBER
                 </label>
-                <div className="relative">
-                  <input
-                    value={newGame.rightNumber}
-                    onChange={(e) => setNewGame({ ...newGame, rightNumber: e.target.value })}
-                    placeholder="Right (e.g., 129)"
-                    maxLength={3}
-                    className={`w-full bg-gray-50 border-2 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none rounded-xl ${
-                      newGame.rightNumber &&
-                      !isValidGameNumber(newGame.rightNumber, "right") &&
-                      newGame.rightNumber !== "***"
-                        ? "border-red-400 focus:border-red-500"
-                        : "border-gray-200 focus:border-blue-500"
-                    }`}
-                  />
-                  {newGame.rightNumber &&
-                    !isValidGameNumber(newGame.rightNumber, "right") &&
-                    newGame.rightNumber !== "***" && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <AlertCircle className="w-4 h-4 text-red-500" />
-                      </div>
-                    )}
+                <input
+                  value={newGame.rightNumber}
+                  onChange={(e) => setNewGame({ ...newGame, rightNumber: e.target.value })}
+                  placeholder="Right (e.g., 129)"
+                  maxLength={3}
+                  className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl"
+                />
+              </div>
+            </div>
+
+            {/* Color Pickers for Add Form */}
+            <div className="border-t border-gray-200 pt-4">
+              <label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-3 flex items-center gap-2">
+                <Palette className="w-4 h-4" />
+                CUSTOMIZE COLORS (Text & Background)
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Left Number Colors */}
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-mono font-bold text-gray-700 mb-2">Left Number</p>
+                  <div className="flex gap-2 mb-2">
+                    <ColorPicker
+                      color={newGame.leftNumberColor || "#000000"}
+                      onChange={(color) => setNewGame({ ...newGame, leftNumberColor: color })}
+                      label="Text"
+                    />
+                    <ColorPicker
+                      color={newGame.leftNumberBgColor || "#f3f4f6"}
+                      onChange={(color) => setNewGame({ ...newGame, leftNumberBgColor: color })}
+                      label="BG"
+                    />
+                  </div>
+                  <div 
+                    className="mt-2 p-2 rounded-lg text-center text-sm font-mono font-bold transition-all"
+                    style={{ 
+                      backgroundColor: newGame.leftNumberBgColor || "#f3f4f6",
+                      color: newGame.leftNumberColor || "#000000"
+                    }}
+                  >
+                    Preview: {newGame.leftNumber || "***"}
+                  </div>
                 </div>
-                {newGame.rightNumber &&
-                  !isValidGameNumber(newGame.rightNumber, "right") &&
-                  newGame.rightNumber !== "***" && (
-                    <p className="text-[8px] font-mono text-red-600 mt-1">Invalid number</p>
-                  )}
+
+                {/* Center Number Colors */}
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-mono font-bold text-gray-700 mb-2">Center Number</p>
+                  <div className="flex gap-2 mb-2">
+                    <ColorPicker
+                      color={newGame.centerNumberColor || "#000000"}
+                      onChange={(color) => setNewGame({ ...newGame, centerNumberColor: color })}
+                      label="Text"
+                    />
+                    <ColorPicker
+                      color={newGame.centerNumberBgColor || "#f3f4f6"}
+                      onChange={(color) => setNewGame({ ...newGame, centerNumberBgColor: color })}
+                      label="BG"
+                    />
+                  </div>
+                  <div 
+                    className="mt-2 p-2 rounded-lg text-center text-lg font-mono font-black transition-all"
+                    style={{ 
+                      backgroundColor: newGame.centerNumberBgColor || "#f3f4f6",
+                      color: newGame.centerNumberColor || "#000000"
+                    }}
+                  >
+                    Preview: {newGame.centerNumber || "*"}
+                  </div>
+                </div>
+
+                {/* Right Number Colors */}
+                <div className="p-3 bg-gray-50 rounded-xl">
+                  <p className="text-xs font-mono font-bold text-gray-700 mb-2">Right Number</p>
+                  <div className="flex gap-2 mb-2">
+                    <ColorPicker
+                      color={newGame.rightNumberColor || "#000000"}
+                      onChange={(color) => setNewGame({ ...newGame, rightNumberColor: color })}
+                      label="Text"
+                    />
+                    <ColorPicker
+                      color={newGame.rightNumberBgColor || "#f3f4f6"}
+                      onChange={(color) => setNewGame({ ...newGame, rightNumberBgColor: color })}
+                      label="BG"
+                    />
+                  </div>
+                  <div 
+                    className="mt-2 p-2 rounded-lg text-center text-sm font-mono font-bold transition-all"
+                    style={{ 
+                      backgroundColor: newGame.rightNumberBgColor || "#f3f4f6",
+                      color: newGame.rightNumberColor || "#000000"
+                    }}
+                  >
+                    Preview: {newGame.rightNumber || "***"}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -810,7 +895,6 @@ const AdminGames = () => {
         ) : (
           filteredGames.map((g, index) => {
             const isActive = getGameActiveValue(g);
-            const centerNumberStyle = getCenterNumberStyle(g.centerNumber);
             const isSpecialDouble = VALID_DOUBLE_DIGIT_CENTER.includes(g.centerNumber);
 
             return (
@@ -826,78 +910,125 @@ const AdminGames = () => {
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <label className="text-[10px] font-mono font-bold text-gray-600">Left Number</label>
-                          <button
-                            type="button"
-                            onClick={resetLeftNumber}
-                            className="text-[8px] font-mono text-blue-600 hover:text-blue-800"
-                          >
-                            Reset
-                          </button>
+                          <button onClick={resetLeftNumber} className="text-[8px] font-mono text-blue-600">Reset</button>
                         </div>
                         <input
                           value={editData.leftNumber}
                           maxLength={3}
                           onChange={(e) => setEditData({ ...editData, leftNumber: e.target.value })}
-                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none rounded-lg ${
-                            !isValidGameNumber(editData.leftNumber, "left") &&
-                            editData.leftNumber !== "***"
-                              ? "border-red-400"
-                              : "border-gray-200"
-                          }`}
+                          className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg"
                         />
                       </div>
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <label className="text-[10px] font-mono font-bold text-gray-600">Center</label>
-                          <button
-                            type="button"
-                            onClick={resetCenterNumber}
-                            className="text-[8px] font-mono text-blue-600 hover:text-blue-800"
-                          >
-                            Reset
-                          </button>
+                          <button onClick={resetCenterNumber} className="text-[8px] font-mono text-blue-600">Reset</button>
                         </div>
                         <input
                           value={editData.centerNumber}
                           maxLength={2}
                           onChange={(e) => setEditData({ ...editData, centerNumber: e.target.value })}
-                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none rounded-lg ${
-                            editData.centerNumber.length === 2 && 
-                            !VALID_DOUBLE_DIGIT_CENTER.includes(editData.centerNumber) &&
-                            editData.centerNumber !== "*"
-                              ? "border-red-400 bg-red-50"
-                              : "border-gray-200"
-                          }`}
+                          className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg"
                         />
-                        {editData.centerNumber && 
-                          VALID_DOUBLE_DIGIT_CENTER.includes(editData.centerNumber) && (
-                            <p className="text-[7px] font-mono text-red-500 mt-1">⚠️ Will appear in RED</p>
-                          )}
                       </div>
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <label className="text-[10px] font-mono font-bold text-gray-600">Right</label>
-                          <button
-                            type="button"
-                            onClick={resetRightNumber}
-                            className="text-[8px] font-mono text-blue-600 hover:text-blue-800"
-                          >
-                            Reset
-                          </button>
+                          <button onClick={resetRightNumber} className="text-[8px] font-mono text-blue-600">Reset</button>
                         </div>
                         <input
                           value={editData.rightNumber}
                           maxLength={3}
                           onChange={(e) => setEditData({ ...editData, rightNumber: e.target.value })}
-                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none rounded-lg ${
-                            !isValidGameNumber(editData.rightNumber, "right") &&
-                            editData.rightNumber !== "***"
-                              ? "border-red-400"
-                              : "border-gray-200"
-                          }`}
+                          className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg"
                         />
                       </div>
                     </div>
+
+                    {/* Color Pickers for Edit Form */}
+                    <div className="border-t border-gray-200 pt-4">
+                      <label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-3 flex items-center gap-2">
+                        <Palette className="w-4 h-4" />
+                        CUSTOMIZE COLORS
+                      </label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="p-3 bg-gray-50 rounded-xl">
+                          <p className="text-xs font-mono font-bold text-gray-700 mb-2">Left Number</p>
+                          <div className="flex gap-2 mb-2">
+                            <ColorPicker
+                              color={editData.leftNumberColor || "#000000"}
+                              onChange={(color) => setEditData({ ...editData, leftNumberColor: color })}
+                              label="Text"
+                            />
+                            <ColorPicker
+                              color={editData.leftNumberBgColor || "#f3f4f6"}
+                              onChange={(color) => setEditData({ ...editData, leftNumberBgColor: color })}
+                              label="BG"
+                            />
+                          </div>
+                          <div 
+                            className="p-2 rounded-lg text-center text-sm font-mono font-bold"
+                            style={{ 
+                              backgroundColor: editData.leftNumberBgColor || "#f3f4f6",
+                              color: editData.leftNumberColor || "#000000"
+                            }}
+                          >
+                            {editData.leftNumber}
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-gray-50 rounded-xl">
+                          <p className="text-xs font-mono font-bold text-gray-700 mb-2">Center Number</p>
+                          <div className="flex gap-2 mb-2">
+                            <ColorPicker
+                              color={editData.centerNumberColor || "#000000"}
+                              onChange={(color) => setEditData({ ...editData, centerNumberColor: color })}
+                              label="Text"
+                            />
+                            <ColorPicker
+                              color={editData.centerNumberBgColor || "#f3f4f6"}
+                              onChange={(color) => setEditData({ ...editData, centerNumberBgColor: color })}
+                              label="BG"
+                            />
+                          </div>
+                          <div 
+                            className="p-2 rounded-lg text-center text-lg font-mono font-black"
+                            style={{ 
+                              backgroundColor: editData.centerNumberBgColor || "#f3f4f6",
+                              color: editData.centerNumberColor || "#000000"
+                            }}
+                          >
+                            {editData.centerNumber}
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-gray-50 rounded-xl">
+                          <p className="text-xs font-mono font-bold text-gray-700 mb-2">Right Number</p>
+                          <div className="flex gap-2 mb-2">
+                            <ColorPicker
+                              color={editData.rightNumberColor || "#000000"}
+                              onChange={(color) => setEditData({ ...editData, rightNumberColor: color })}
+                              label="Text"
+                            />
+                            <ColorPicker
+                              color={editData.rightNumberBgColor || "#f3f4f6"}
+                              onChange={(color) => setEditData({ ...editData, rightNumberBgColor: color })}
+                              label="BG"
+                            />
+                          </div>
+                          <div 
+                            className="p-2 rounded-lg text-center text-sm font-mono font-bold"
+                            style={{ 
+                              backgroundColor: editData.rightNumberBgColor || "#f3f4f6",
+                              color: editData.rightNumberColor || "#000000"
+                            }}
+                          >
+                            {editData.rightNumber}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-[10px] font-mono font-bold text-gray-600">Open Time</label>
@@ -948,23 +1079,39 @@ const AdminGames = () => {
                             <span className="text-xs font-mono font-bold text-blue-600">#{index + 1}</span>
                           </div>
                           <h3 className="font-mono font-bold text-lg text-gray-900">{g.name}</h3>
-                          <span
-                            className={`px-2.5 py-1 rounded-full text-[9px] font-mono font-bold ${
-                              isActive 
-                                ? "bg-green-100 text-green-700" 
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
+                          <span className={`px-2.5 py-1 rounded-full text-[9px] font-mono font-bold ${isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                             {isActive ? "● Active" : "● Inactive"}
                           </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-sm">
-                          <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg">
-                            <span className="text-xs font-mono font-bold text-gray-800">{g.leftNumber}</span>
-                            <span className={`text-lg font-mono ${isSpecialDouble ? "text-red-600 font-black" : "text-blue-600 font-black"}`}>
+                          <div className="flex items-center gap-2 rounded-lg">
+                            <span 
+                              className="text-xs font-mono font-bold px-3 py-1.5 rounded-lg transition-all"
+                              style={{ 
+                                backgroundColor: g.leftNumberBgColor || "#f3f4f6",
+                                color: g.leftNumberColor || "#000000"
+                              }}
+                            >
+                              {g.leftNumber}
+                            </span>
+                            <span 
+                              className="text-lg font-mono font-black px-3 py-1.5 rounded-lg transition-all"
+                              style={{ 
+                                backgroundColor: g.centerNumberBgColor || (isSpecialDouble ? "#fee2e2" : "#f3f4f6"),
+                                color: g.centerNumberColor || (isSpecialDouble ? "#dc2626" : "#000000")
+                              }}
+                            >
                               {g.centerNumber}
                             </span>
-                            <span className="text-xs font-mono font-bold text-gray-800">{g.rightNumber}</span>
+                            <span 
+                              className="text-xs font-mono font-bold px-3 py-1.5 rounded-lg transition-all"
+                              style={{ 
+                                backgroundColor: g.rightNumberBgColor || "#f3f4f6",
+                                color: g.rightNumberColor || "#000000"
+                              }}
+                            >
+                              {g.rightNumber}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1 text-[10px] font-mono text-gray-500">
                             <Clock className="w-3 h-3" />
@@ -975,11 +1122,7 @@ const AdminGames = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleToggleGameStatus(g.id)}
-                          className={`p-2 rounded-lg transition-all ${
-                            isActive 
-                              ? "text-green-600 hover:bg-green-50" 
-                              : "text-gray-400 hover:bg-gray-100"
-                          }`}
+                          className={`p-2 rounded-lg transition-all ${isActive ? "text-green-600 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100"}`}
                           title={isActive ? "Deactivate Game" : "Activate Game"}
                         >
                           <Power className="w-4 h-4" />

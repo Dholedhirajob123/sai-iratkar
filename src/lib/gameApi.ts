@@ -31,6 +31,13 @@ export interface Game {
   leftNumberAddedAt?: string;
   leftNumberResult?: "won" | "lost" | "pending";
   leftNumberDeclaredAt?: string;
+  // Color properties for text and background
+  leftNumberColor?: string;
+  leftNumberBgColor?: string;
+  centerNumberColor?: string;
+  centerNumberBgColor?: string;
+  rightNumberColor?: string;
+  rightNumberBgColor?: string;
 }
 
 export interface GameEntry {
@@ -278,7 +285,16 @@ export const createGame = async (game: Partial<Game>): Promise<Game> => {
   const response = await fetch(`${BASE_URL}/games`, {
     method: "POST",
     headers: getHeaders(true),
-    body: JSON.stringify(game),
+    body: JSON.stringify({
+      ...game,
+      // Ensure color properties are included with defaults if not provided
+      leftNumberColor: game.leftNumberColor || "#000000",
+      leftNumberBgColor: game.leftNumberBgColor || "#f3f4f6",
+      centerNumberColor: game.centerNumberColor || "#000000",
+      centerNumberBgColor: game.centerNumberBgColor || "#f3f4f6",
+      rightNumberColor: game.rightNumberColor || "#000000",
+      rightNumberBgColor: game.rightNumberBgColor || "#f3f4f6",
+    }),
   });
   const newGame = await handleResponse(response);
   // Invalidate cache
@@ -293,7 +309,16 @@ export const updateGame = async (
   const response = await fetch(`${BASE_URL}/games/${id}`, {
     method: "PUT",
     headers: getHeaders(true),
-    body: JSON.stringify(game),
+    body: JSON.stringify({
+      ...game,
+      // Preserve color properties
+      leftNumberColor: game.leftNumberColor,
+      leftNumberBgColor: game.leftNumberBgColor,
+      centerNumberColor: game.centerNumberColor,
+      centerNumberBgColor: game.centerNumberBgColor,
+      rightNumberColor: game.rightNumberColor,
+      rightNumberBgColor: game.rightNumberBgColor,
+    }),
   });
   const updatedGame = await handleResponse(response);
   localStorage.removeItem(CACHE_KEYS.GAMES);

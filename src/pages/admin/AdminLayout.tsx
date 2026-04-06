@@ -83,10 +83,10 @@ const AdminLayout = () => {
               <div className="flex items-center gap-3">
                 {/* Logo Icon with Image */}
                 <div className="relative">
-                  <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600">
+                  <div className="relative w-10 h-10 rounded-xl flex items-center justify-center shadow-lg overflow-hidden bg-white border border-gray-200">
                     <img 
                       src="/icons/launchericon-192x192.png" 
-                      alt="Matka King Logo" 
+                      alt="Si King Logo" 
                       className="w-8 h-8 object-contain"
                     />
                   </div>
@@ -162,7 +162,7 @@ const AdminLayout = () => {
                   <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
                     <img 
                       src="/icons/launchericon-192x192.png" 
-                      alt="Matka King Logo" 
+                      alt="Si King Logo" 
                       className="w-8 h-8 object-contain"
                     />
                   </div>

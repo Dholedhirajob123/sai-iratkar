@@ -36,9 +36,6 @@ import GameCard from "@/components/GameCard";
 import GameTypeSelector from "@/components/GameTypeSelector";
 import BottomNav from "@/components/BottomNav";
 
-// Valid double-digit center numbers that should appear in RED
-const VALID_DOUBLE_DIGIT_CENTER = ["11", "22", "33", "44", "55", "66", "77", "88", "99", "16", "27", "38", "49", "50", "61", "72", "83", "05"];
-
 const getTodayDateTime = (time: string): Date => {
   const now = new Date();
   const [hours, minutes] = time.split(":").map(Number);
@@ -63,17 +60,6 @@ const canPlayGame = (game: Game, playType: "open" | "close") => {
   }
 
   return false;
-};
-
-// Helper function to get center number style
-const getCenterNumberStyle = (centerNum: string) => {
-  if (VALID_DOUBLE_DIGIT_CENTER.includes(centerNum)) {
-    return "text-red-600 font-black";
-  }
-  if (centerNum.length === 1 || centerNum === "*") {
-    return "text-blue-600 font-black";
-  }
-  return "text-gray-800 font-bold";
 };
 
 const Dashboard = () => {
@@ -396,9 +382,9 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="p-6 border-b border-gray-100 bg-gradient-to-r ">
+        <div className="p-6 border-b border-gray-100 bg-gradient-to-r">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br  rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+            <div className="w-14 h-14 bg-gradient-to-br rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
               <img 
                 src="/icons/launchericon-192x192.png" 
                 alt="Matka King Logo" 
@@ -598,7 +584,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {/* Games List - With center number in RED for special double digits */}
+      {/* Games List - Displaying Admin Custom Colors */}
       <div className="px-4 space-y-4 pb-24">
         {gamesLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
@@ -624,20 +610,13 @@ const Dashboard = () => {
           </div>
         ) : (
           games.map((game) => {
-            // Pass the center number styling to GameCard
-            const centerNumberClass = getCenterNumberStyle(game.centerNumber);
-            const isSpecialDouble = VALID_DOUBLE_DIGIT_CENTER.includes(game.centerNumber);
-            
+            // Pass the full game object with all color properties to GameCard
             return (
               <GameCard
                 key={game.id}
                 game={game}
                 onPlayOpen={(g) => setSelectedGame({ game: g, playType: "open" })}
-                onPlayClose={(g) =>
-                  setSelectedGame({ game: g, playType: "close" })
-                }
-                centerNumberClass={centerNumberClass}
-                isSpecialDouble={isSpecialDouble}
+                onPlayClose={(g) => setSelectedGame({ game: g, playType: "close" })}
               />
             );
           })
