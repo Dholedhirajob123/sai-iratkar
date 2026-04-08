@@ -33,42 +33,44 @@ const Login = () => {
 // 🔥 Handle secret logo clicks for admin access
 const handleSecretLogoClick = () => {
   const now = Date.now();
-  
-  // Reset counter if more than 2 seconds between clicks
-  if (now - lastClickTime > 2000) {
-    setClickCount(1);
-  } else {
-    setClickCount(prev => prev + 1);
+
+  let newCount = 1;
+
+  // Reset if delay > 2 sec
+  if (now - lastClickTime <= 2000) {
+    newCount = clickCount + 1;
   }
-  
+
+  setClickCount(newCount);
   setLastClickTime(now);
-  
-  // Show visual feedback
-  if (clickCount === 2) {
+
+  // Feedback messages
+  if (newCount === 2) {
     toast({
       title: "⭐ Star Matka",
-      description: `${5 - clickCount} more taps to unlock Star Matka Dashboard!`,
+      description: `${5 - newCount} more taps to unlock Admin Login!`,
       duration: 800,
     });
   }
-  
-  if (clickCount === 3) {
+
+  if (newCount === 3) {
     toast({
       title: "✨ Almost there...",
-      description: `${5 - clickCount} more taps for exclusive dashboard`,
+      description: `${5 - newCount} more taps`,
       duration: 800,
     });
   }
-  
-  // 🔥 5 clicks = Star Matka Dashboard
-  if (clickCount === 4) {
+
+  // ✅ FINAL CLICK (5th click)
+  if (newCount === 5) {
     toast({
-      title: "🌟 Star Matka Unlocked!",
-      description: "Opening exclusive dashboard...",
-      duration: 1500,
+      title: "🔐 Admin Access",
+      description: "Opening Admin Login...",
+      duration: 1200,
     });
+
     setTimeout(() => {
-      navigate("/star-matka");
+      navigate("/star-matka"); // 👈 CHANGE HERE
       setClickCount(0);
     }, 500);
   }
@@ -138,13 +140,23 @@ const handleSecretLogoClick = () => {
 
       const role = String(user.role || data.role || "").toUpperCase();
 
-      if (role === "ADMIN") {
-        navigate("/admin", { replace: true });
-      } else if (role === "USER") {
-        navigate("/dashboard", { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
+// ❌ Block admin login here
+if (role === "ADMIN") {
+  toast({
+    title: "Access Denied",
+    description: "Invalid credentials or server error",
+    variant: "destructive",
+  });
+
+  return; // ⛔ STOP here
+}
+
+// ✅ Only allow USER
+if (role === "USER") {
+  navigate("/dashboard", { replace: true });
+} else {
+  navigate("/", { replace: true });
+}
     } catch (error: any) {
       console.error("LOGIN ERROR:", error);
       toast({
@@ -198,7 +210,7 @@ const handleSecretLogoClick = () => {
           <div className="px-6 py-8">
             <div className="flex items-center gap-2 mb-6">
               <Shield className="w-5 h-5 text-blue-600" />
-              <h2 className="text-xl font-mono font-bold text-gray-900">Welcome Back</h2>
+              <h2 className="text-xl font-mono font-bold text-gray-900">Login Here</h2>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
