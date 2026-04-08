@@ -125,7 +125,7 @@ const Register = () => {
               {/* App Icon Image */}
               <img 
                 src="/icons/launchericon-192x192.png" 
-                alt="Matka King Logo" 
+                alt="Si King Logo" 
                 className="w-16 h-16 object-contain"
               />
               <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400" />

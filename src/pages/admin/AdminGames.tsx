@@ -47,7 +47,20 @@ const VALID_DOUBLE_DIGIT_CENTER = ["10", "11", "12", "13", "14", "15", "16", "17
   "81", "82", "83", "84", "85", "86", "87", "88", "89", "90",
   "91", "92", "93", "94", "95", "96", "97", "98", "99"];
 
-// Color Picker Component
+const PRESET_TEXT_COLORS = [
+  { label: "Red", value: "#dc2626" },
+  { label: "Green", value: "#15803d" },
+  { label: "Black", value: "#000000" },
+];
+
+const PRESET_BG_COLORS = [
+  { label: "Red", value: "#fef2f2" },
+  { label: "Yellow", value: "#fde68a" },
+  { label: "White", value: "#ffffff" },
+];
+
+const CENTER_BG_COLOR = "#fde68a";
+
 const ColorPicker = ({ 
   color, 
   onChange, 
@@ -100,6 +113,62 @@ const ColorPicker = ({
     </div>
   );
 };
+
+const TextColorPicker = ({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (color: string) => void;
+  label: string;
+}) => (
+  <div className="space-y-2">
+    <div className="text-[10px] font-mono font-bold text-gray-500">{label}</div>
+    <div className="flex items-center gap-2">
+      {PRESET_TEXT_COLORS.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          className={`w-8 h-8 rounded-full border-2 transition-all ${
+            value === option.value ? "border-black" : "border-gray-300"
+          }`}
+          style={{ backgroundColor: option.value }}
+          title={option.label}
+        />
+      ))}
+    </div>
+  </div>
+);
+
+const BackgroundColorPicker = ({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (color: string) => void;
+  label: string;
+}) => (
+  <div className="space-y-2">
+    <div className="text-[10px] font-mono font-bold text-gray-500">{label}</div>
+    <div className="flex items-center gap-2">
+      {PRESET_BG_COLORS.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(option.value)}
+          className={`w-8 h-8 rounded border-2 transition-all ${
+            value === option.value ? "border-black" : "border-gray-300"
+          }`}
+          style={{ backgroundColor: option.value }}
+          title={option.label}
+        />
+      ))}
+    </div>
+  </div>
+);
 
 // Valid Numbers List Component
 const ValidNumbersList = () => {
@@ -221,7 +290,7 @@ const AdminGames = () => {
     leftNumberColor: "#000000",
     leftNumberBgColor: "#f3f4f6",
     centerNumberColor: "#000000",
-    centerNumberBgColor: "#f3f4f6",
+    centerNumberBgColor: CENTER_BG_COLOR,
     rightNumberColor: "#000000",
     rightNumberBgColor: "#f3f4f6",
   });
@@ -315,7 +384,7 @@ const AdminGames = () => {
       leftNumberColor: g.leftNumberColor || "#000000",
       leftNumberBgColor: g.leftNumberBgColor || "#f3f4f6",
       centerNumberColor: g.centerNumberColor || "#000000",
-      centerNumberBgColor: g.centerNumberBgColor || "#f3f4f6",
+      centerNumberBgColor: g.centerNumberBgColor || CENTER_BG_COLOR,
       rightNumberColor: g.rightNumberColor || "#000000",
       rightNumberBgColor: g.rightNumberBgColor || "#f3f4f6",
     });
@@ -500,7 +569,7 @@ const AdminGames = () => {
         leftNumberColor: newGame.leftNumberColor || "#000000",
         leftNumberBgColor: newGame.leftNumberBgColor || "#f3f4f6",
         centerNumberColor: newGame.centerNumberColor || "#000000",
-        centerNumberBgColor: newGame.centerNumberBgColor || "#f3f4f6",
+        centerNumberBgColor: newGame.centerNumberBgColor || CENTER_BG_COLOR,
         rightNumberColor: newGame.rightNumberColor || "#000000",
         rightNumberBgColor: newGame.rightNumberBgColor || "#f3f4f6",
       });
@@ -518,7 +587,7 @@ const AdminGames = () => {
         leftNumberColor: "#000000",
         leftNumberBgColor: "#f3f4f6",
         centerNumberColor: "#000000",
-        centerNumberBgColor: "#f3f4f6",
+        centerNumberBgColor: CENTER_BG_COLOR,
         rightNumberColor: "#000000",
         rightNumberBgColor: "#f3f4f6",
       });
@@ -669,7 +738,7 @@ const AdminGames = () => {
                   leftNumberColor: "#000000",
                   leftNumberBgColor: "#f3f4f6",
                   centerNumberColor: "#000000",
-                  centerNumberBgColor: "#f3f4f6",
+                  centerNumberBgColor: CENTER_BG_COLOR,
                   rightNumberColor: "#000000",
                   rightNumberBgColor: "#f3f4f6",
                 });
@@ -761,14 +830,14 @@ const AdminGames = () => {
                 {/* Left Number Colors */}
                 <div className="p-3 bg-gray-50 rounded-xl">
                   <p className="text-xs font-mono font-bold text-gray-700 mb-2">Left Number</p>
-                  <div className="flex gap-2 mb-2">
-                    <ColorPicker
-                      color={newGame.leftNumberColor || "#000000"}
+                  <div className="flex gap-2 mb-2 items-end">
+                    <TextColorPicker
+                      value={newGame.leftNumberColor || "#000000"}
                       onChange={(color) => setNewGame({ ...newGame, leftNumberColor: color })}
                       label="Text"
                     />
-                    <ColorPicker
-                      color={newGame.leftNumberBgColor || "#f3f4f6"}
+                    <BackgroundColorPicker
+                      value={newGame.leftNumberBgColor || "#f3f4f6"}
                       onChange={(color) => setNewGame({ ...newGame, leftNumberBgColor: color })}
                       label="BG"
                     />
@@ -787,14 +856,14 @@ const AdminGames = () => {
                 {/* Center Number Colors */}
                 <div className="p-3 bg-gray-50 rounded-xl">
                   <p className="text-xs font-mono font-bold text-gray-700 mb-2">Center Number</p>
-                  <div className="flex gap-2 mb-2">
-                    <ColorPicker
-                      color={newGame.centerNumberColor || "#000000"}
+                  <div className="flex gap-2 mb-2 items-end">
+                    <TextColorPicker
+                      value={newGame.centerNumberColor || "#000000"}
                       onChange={(color) => setNewGame({ ...newGame, centerNumberColor: color })}
                       label="Text"
                     />
-                    <ColorPicker
-                      color={newGame.centerNumberBgColor || "#f3f4f6"}
+                    <BackgroundColorPicker
+                      value={newGame.centerNumberBgColor || CENTER_BG_COLOR}
                       onChange={(color) => setNewGame({ ...newGame, centerNumberBgColor: color })}
                       label="BG"
                     />
@@ -802,7 +871,7 @@ const AdminGames = () => {
                   <div 
                     className="mt-2 p-2 rounded-lg text-center text-lg font-mono font-black transition-all"
                     style={{ 
-                      backgroundColor: newGame.centerNumberBgColor || "#f3f4f6",
+                      backgroundColor: newGame.centerNumberBgColor || CENTER_BG_COLOR,
                       color: newGame.centerNumberColor || "#000000"
                     }}
                   >
@@ -813,14 +882,14 @@ const AdminGames = () => {
                 {/* Right Number Colors */}
                 <div className="p-3 bg-gray-50 rounded-xl">
                   <p className="text-xs font-mono font-bold text-gray-700 mb-2">Right Number</p>
-                  <div className="flex gap-2 mb-2">
-                    <ColorPicker
-                      color={newGame.rightNumberColor || "#000000"}
+                  <div className="flex gap-2 mb-2 items-end">
+                    <TextColorPicker
+                      value={newGame.rightNumberColor || "#000000"}
                       onChange={(color) => setNewGame({ ...newGame, rightNumberColor: color })}
                       label="Text"
                     />
-                    <ColorPicker
-                      color={newGame.rightNumberBgColor || "#f3f4f6"}
+                    <BackgroundColorPicker
+                      value={newGame.rightNumberBgColor || "#f3f4f6"}
                       onChange={(color) => setNewGame({ ...newGame, rightNumberBgColor: color })}
                       label="BG"
                     />
@@ -954,14 +1023,14 @@ const AdminGames = () => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="p-3 bg-gray-50 rounded-xl">
                           <p className="text-xs font-mono font-bold text-gray-700 mb-2">Left Number</p>
-                          <div className="flex gap-2 mb-2">
-                            <ColorPicker
-                              color={editData.leftNumberColor || "#000000"}
+                          <div className="flex gap-2 mb-2 items-end">
+                            <TextColorPicker
+                              value={editData.leftNumberColor || "#000000"}
                               onChange={(color) => setEditData({ ...editData, leftNumberColor: color })}
                               label="Text"
                             />
-                            <ColorPicker
-                              color={editData.leftNumberBgColor || "#f3f4f6"}
+                            <BackgroundColorPicker
+                              value={editData.leftNumberBgColor || "#f3f4f6"}
                               onChange={(color) => setEditData({ ...editData, leftNumberBgColor: color })}
                               label="BG"
                             />
@@ -979,14 +1048,14 @@ const AdminGames = () => {
 
                         <div className="p-3 bg-gray-50 rounded-xl">
                           <p className="text-xs font-mono font-bold text-gray-700 mb-2">Center Number</p>
-                          <div className="flex gap-2 mb-2">
-                            <ColorPicker
-                              color={editData.centerNumberColor || "#000000"}
+                          <div className="flex gap-2 mb-2 items-end">
+                            <TextColorPicker
+                              value={editData.centerNumberColor || "#000000"}
                               onChange={(color) => setEditData({ ...editData, centerNumberColor: color })}
                               label="Text"
                             />
-                            <ColorPicker
-                              color={editData.centerNumberBgColor || "#f3f4f6"}
+                            <BackgroundColorPicker
+                              value={editData.centerNumberBgColor || CENTER_BG_COLOR}
                               onChange={(color) => setEditData({ ...editData, centerNumberBgColor: color })}
                               label="BG"
                             />
@@ -994,7 +1063,7 @@ const AdminGames = () => {
                           <div 
                             className="p-2 rounded-lg text-center text-lg font-mono font-black"
                             style={{ 
-                              backgroundColor: editData.centerNumberBgColor || "#f3f4f6",
+                              backgroundColor: editData.centerNumberBgColor || CENTER_BG_COLOR,
                               color: editData.centerNumberColor || "#000000"
                             }}
                           >
@@ -1004,14 +1073,14 @@ const AdminGames = () => {
 
                         <div className="p-3 bg-gray-50 rounded-xl">
                           <p className="text-xs font-mono font-bold text-gray-700 mb-2">Right Number</p>
-                          <div className="flex gap-2 mb-2">
-                            <ColorPicker
-                              color={editData.rightNumberColor || "#000000"}
+                          <div className="flex gap-2 mb-2 items-end">
+                            <TextColorPicker
+                              value={editData.rightNumberColor || "#000000"}
                               onChange={(color) => setEditData({ ...editData, rightNumberColor: color })}
                               label="Text"
                             />
-                            <ColorPicker
-                              color={editData.rightNumberBgColor || "#f3f4f6"}
+                            <BackgroundColorPicker
+                              value={editData.rightNumberBgColor || "#f3f4f6"}
                               onChange={(color) => setEditData({ ...editData, rightNumberBgColor: color })}
                               label="BG"
                             />

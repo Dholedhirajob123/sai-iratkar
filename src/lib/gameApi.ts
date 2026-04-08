@@ -235,8 +235,20 @@ export const getGames = async (): Promise<Game[]> => {
       headers: getHeaders(),
     });
     const games = await handleResponse(response);
-    cacheData(CACHE_KEYS.GAMES, games);
-    return games;
+    
+    // Ensure all games have color properties with defaults
+    const gamesWithColors = games.map((game: Game) => ({
+      ...game,
+      leftNumberColor: game.leftNumberColor || "#000000",
+      leftNumberBgColor: game.leftNumberBgColor || "#f3f4f6",
+      centerNumberColor: game.centerNumberColor || "#000000",
+      centerNumberBgColor: game.centerNumberBgColor || "#fde68a",
+      rightNumberColor: game.rightNumberColor || "#000000",
+      rightNumberBgColor: game.rightNumberBgColor || "#f3f4f6",
+    }));
+    
+    cacheData(CACHE_KEYS.GAMES, gamesWithColors);
+    return gamesWithColors;
   } catch (error) {
     console.error('Failed to fetch games:', error);
     // Return cached data if offline
@@ -253,7 +265,20 @@ export const getActiveGames = async (): Promise<Game[]> => {
     const response = await fetchWithTimeout(`${BASE_URL}/games/active`, {
       headers: getHeaders(),
     });
-    return handleResponse(response);
+    const games = await handleResponse(response);
+    
+    // Ensure all games have color properties with defaults
+    const gamesWithColors = games.map((game: Game) => ({
+      ...game,
+      leftNumberColor: game.leftNumberColor || "#000000",
+      leftNumberBgColor: game.leftNumberBgColor || "#f3f4f6",
+      centerNumberColor: game.centerNumberColor || "#000000",
+      centerNumberBgColor: game.centerNumberBgColor || "#fde68a",
+      rightNumberColor: game.rightNumberColor || "#000000",
+      rightNumberBgColor: game.rightNumberBgColor || "#f3f4f6",
+    }));
+    
+    return gamesWithColors;
   } catch (error) {
     console.error('Failed to fetch active games:', error);
     const cachedGames = getCachedData(CACHE_KEYS.GAMES);
@@ -269,7 +294,18 @@ export const getGameById = async (id: number): Promise<Game> => {
     const response = await fetchWithTimeout(`${BASE_URL}/games/${id}`, {
       headers: getHeaders(),
     });
-    return handleResponse(response);
+    const game = await handleResponse(response);
+    
+    // Ensure game has color properties with defaults
+    return {
+      ...game,
+      leftNumberColor: game.leftNumberColor || "#000000",
+      leftNumberBgColor: game.leftNumberBgColor || "#f3f4f6",
+      centerNumberColor: game.centerNumberColor || "#000000",
+      centerNumberBgColor: game.centerNumberBgColor || "#fde68a",
+      rightNumberColor: game.rightNumberColor || "#000000",
+      rightNumberBgColor: game.rightNumberBgColor || "#f3f4f6",
+    };
   } catch (error) {
     console.error('Failed to fetch game:', error);
     const cachedGames = getCachedData(CACHE_KEYS.GAMES);
@@ -286,12 +322,18 @@ export const createGame = async (game: Partial<Game>): Promise<Game> => {
     method: "POST",
     headers: getHeaders(true),
     body: JSON.stringify({
-      ...game,
-      // Ensure color properties are included with defaults if not provided
+      name: game.name,
+      leftNumber: game.leftNumber || "***",
+      centerNumber: game.centerNumber || "*",
+      rightNumber: game.rightNumber || "***",
+      openTime: game.openTime || "00:00",
+      closeTime: game.closeTime || "00:00",
+      active: game.active !== undefined ? game.active : true,
+      // Include color properties with defaults
       leftNumberColor: game.leftNumberColor || "#000000",
       leftNumberBgColor: game.leftNumberBgColor || "#f3f4f6",
       centerNumberColor: game.centerNumberColor || "#000000",
-      centerNumberBgColor: game.centerNumberBgColor || "#f3f4f6",
+      centerNumberBgColor: game.centerNumberBgColor || "#fde68a",
       rightNumberColor: game.rightNumberColor || "#000000",
       rightNumberBgColor: game.rightNumberBgColor || "#f3f4f6",
     }),
@@ -306,22 +348,33 @@ export const updateGame = async (
   id: number,
   game: Partial<Game>
 ): Promise<Game> => {
+  const updatePayload = {
+    name: game.name,
+    leftNumber: game.leftNumber,
+    centerNumber: game.centerNumber,
+    rightNumber: game.rightNumber,
+    openTime: game.openTime,
+    closeTime: game.closeTime,
+    active: game.active !== undefined ? game.active : game.isActive,
+    // Include color properties - preserve existing if not provided
+    leftNumberColor: game.leftNumberColor,
+    leftNumberBgColor: game.leftNumberBgColor,
+    centerNumberColor: game.centerNumberColor,
+    centerNumberBgColor: game.centerNumberBgColor,
+    rightNumberColor: game.rightNumberColor,
+    rightNumberBgColor: game.rightNumberBgColor,
+  };
+  
   const response = await fetch(`${BASE_URL}/games/${id}`, {
     method: "PUT",
     headers: getHeaders(true),
-    body: JSON.stringify({
-      ...game,
-      // Preserve color properties
-      leftNumberColor: game.leftNumberColor,
-      leftNumberBgColor: game.leftNumberBgColor,
-      centerNumberColor: game.centerNumberColor,
-      centerNumberBgColor: game.centerNumberBgColor,
-      rightNumberColor: game.rightNumberColor,
-      rightNumberBgColor: game.rightNumberBgColor,
-    }),
+    body: JSON.stringify(updatePayload),
   });
   const updatedGame = await handleResponse(response);
+  
+  // Invalidate cache to force refresh
   localStorage.removeItem(CACHE_KEYS.GAMES);
+  
   return updatedGame;
 };
 
@@ -351,7 +404,20 @@ export const searchGames = async (name: string): Promise<Game[]> => {
       `${BASE_URL}/games/search?name=${encodeURIComponent(name)}`,
       { headers: getHeaders() }
     );
-    return handleResponse(response);
+    const games = await handleResponse(response);
+    
+    // Ensure all games have color properties with defaults
+    const gamesWithColors = games.map((game: Game) => ({
+      ...game,
+      leftNumberColor: game.leftNumberColor || "#000000",
+      leftNumberBgColor: game.leftNumberBgColor || "#f3f4f6",
+      centerNumberColor: game.centerNumberColor || "#000000",
+      centerNumberBgColor: game.centerNumberBgColor || "#fde68a",
+      rightNumberColor: game.rightNumberColor || "#000000",
+      rightNumberBgColor: game.rightNumberBgColor || "#f3f4f6",
+    }));
+    
+    return gamesWithColors;
   } catch (error) {
     console.error('Failed to search games:', error);
     const cachedGames = getCachedData(CACHE_KEYS.GAMES);
@@ -658,3 +724,13 @@ export const clearAllCaches = () => {
     localStorage.removeItem(key);
   });
 };
+
+// Helper function to get default colors for a game
+export const getDefaultGameColors = () => ({
+  leftNumberColor: "#000000",
+  leftNumberBgColor: "#f3f4f6",
+  centerNumberColor: "#000000",
+  centerNumberBgColor: "#fde68a",
+  rightNumberColor: "#000000",
+  rightNumberBgColor: "#f3f4f6",
+});

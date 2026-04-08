@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import WalletPage from "./pages/Wallet";
 import BetHistory from "./pages/BetHistory";
 import NotFound from "./pages/NotFound";
+import StarMatkaDashboard from "./pages/StarMatkaDashboard.tsx"; // Import the new dashboard
 
 import { 
   AdminLayout, 
@@ -37,15 +38,22 @@ const App = () => (
           <PWAInstall />
           <OfflineIndicator />
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/pending" element={<Pending />} />
+            <Route path="/offline" element={<Offline />} />
+            
+            {/* User Routes */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/history" element={<BetHistory />} />
-            <Route path="/offline" element={<Offline />} />
             
+            {/* 🔥 Star Matka Secret Dashboard - NOT nested under admin */}
+            <Route path="/star-matka" element={<StarMatkaDashboard />} />
+            
+            {/* Admin Routes - Note: These are NOT nested, they are separate */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminUsers />} />
               <Route path="users" element={<AdminUsers />} />
@@ -55,6 +63,7 @@ const App = () => (
               <Route path="results" element={<AdminResults />} />
             </Route>
             
+            {/* 404 Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

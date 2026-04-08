@@ -4,6 +4,16 @@ import { useNavigate } from "react-router-dom";
 
 type GameStatus = "open" | "timeout";
 
+// Extended Game interface with color properties
+interface ExtendedGame extends Game {
+  leftNumberColor?: string;
+  centerNumberColor?: string;
+  rightNumberColor?: string;
+  leftNumberBgColor?: string;
+  centerNumberBgColor?: string;
+  rightNumberBgColor?: string;
+}
+
 const getTodayDateTime = (time: string): Date => {
   const now = new Date();
   const parts = time.split(":").map(Number);
@@ -34,13 +44,15 @@ const formatTime = (time: string) => {
   const m = parts[1] || 0;
   const ampm = h >= 12 ? "PM" : "AM";
   const hour = h % 12 || 12;
-  return `${hour.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${ampm}`;
+  return `${hour.toString().padStart(2, "0")}:${m
+    .toString()
+    .padStart(2, "0")} ${ampm}`;
 };
 
 interface GameCardProps {
-  game: Game;
-  onPlayOpen?: (game: Game) => void;
-  onPlayClose?: (game: Game) => void;
+  game: ExtendedGame;
+  onPlayOpen?: (game: ExtendedGame) => void;
+  onPlayClose?: (game: ExtendedGame) => void;
 }
 
 const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
@@ -48,23 +60,39 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
   const { openStatus, closeStatus } = getGameStatus(game.openTime, game.closeTime);
   const isActive = game.isActive === true || game.active === true;
 
+  // Get colors from game object with fallbacks
+  const leftTextColor = game.leftNumberColor || "#000000";
+  const leftBgColor = game.leftNumberBgColor || "#f3f4f6";
+  const centerTextColor = game.centerNumberColor || "#000000";
+  const centerBgColor = game.centerNumberBgColor || "#fde68a";
+  const rightTextColor = game.rightNumberColor || "#000000";
+  const rightBgColor = game.rightNumberBgColor || "#f3f4f6";
+
   const handlePlayOpen = () => {
-    if (onPlayOpen) onPlayOpen(game);
-    else navigate(`/play/${game.id}?type=open`);
+    if (onPlayOpen) {
+      onPlayOpen(game);
+    } else {
+      navigate(`/play/${game.id}?type=open`);
+    }
   };
 
   const handlePlayClose = () => {
-    if (onPlayClose) onPlayClose(game);
-    else navigate(`/play/${game.id}?type=close`);
+    if (onPlayClose) {
+      onPlayClose(game);
+    } else {
+      navigate(`/play/${game.id}?type=close`);
+    }
   };
 
   const renderClosedSection = () => (
     <div className="flex border-t-2 border-gray-200">
       <div className="flex-1 flex items-center justify-center gap-2 py-3.5 font-mono text-xs font-bold text-red-600 bg-gradient-to-r from-red-50 to-rose-50 border-r-2 border-gray-200">
-        <XCircle className="w-4 h-4" /> CLOSED
+        <XCircle className="w-4 h-4" />
+        CLOSED
       </div>
       <div className="flex-1 flex items-center justify-center gap-2 py-3.5 font-mono text-xs font-bold text-red-600 bg-gradient-to-r from-red-50 to-rose-50">
-        <XCircle className="w-4 h-4" /> CLOSED
+        <XCircle className="w-4 h-4" />
+        CLOSED
       </div>
     </div>
   );
@@ -76,6 +104,7 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
     withBorder = false
   ) => {
     const isTimeout = status === "timeout";
+    
     const buttonStyles = {
       open: {
         className: "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md",
@@ -88,8 +117,10 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
         text: `Time Out`,
       }
     };
+
     const config = buttonStyles[status];
     const Icon = config.icon;
+
     return (
       <button
         type="button"
@@ -126,53 +157,33 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
 
       {/* NUMBERS with Admin Custom Colors */}
       <div className="flex items-center justify-center gap-6 py-8 px-4 bg-white">
-        <div 
-          className="px-3 sm:px-4 py-2 rounded-xl transition-all duration-200 shadow-sm"
-          style={{ 
-            backgroundColor: game.leftNumberBgColor || "#f3f4f6"
+        <span
+          className="text-3xl font-mono font-bold px-4 py-2 rounded-xl transition-all duration-200"
+          style={{
+            backgroundColor: leftBgColor,
+            color: leftTextColor
           }}
         >
-          <span 
-            className="text-3xl sm:text-4xl font-mono font-bold transition-all"
-            style={{ 
-              color: game.leftNumberColor || "#000000"
-            }}
-          >
-            {game.leftNumber}
-          </span>
-        </div>
-
-        <div 
-          className="px-3 sm:px-4 py-2 rounded-xl transition-all duration-200 shadow-md transform hover:scale-105"
-          style={{ 
-            backgroundColor: game.centerNumberBgColor || "#f3f4f6"
+          {game.leftNumber}
+        </span>
+        <span
+          className="text-4xl font-mono font-black px-4 py-2 rounded-xl transition-all duration-200"
+          style={{
+            backgroundColor: centerBgColor,
+            color: centerTextColor
           }}
         >
-          <span 
-            className="text-4xl sm:text-5xl font-mono font-black transition-all"
-            style={{ 
-              color: game.centerNumberColor || "#000000"
-            }}
-          >
-            {game.centerNumber}
-          </span>
-        </div>
-
-        <div 
-          className="px-3 sm:px-4 py-2 rounded-xl transition-all duration-200 shadow-sm"
-          style={{ 
-            backgroundColor: game.rightNumberBgColor || "#f3f4f6"
+          {game.centerNumber}
+        </span>
+        <span
+          className="text-3xl font-mono font-bold px-4 py-2 rounded-xl transition-all duration-200"
+          style={{
+            backgroundColor: rightBgColor,
+            color: rightTextColor
           }}
         >
-          <span 
-            className="text-3xl sm:text-4xl font-mono font-bold transition-all"
-            style={{ 
-              color: game.rightNumberColor || "#000000"
-            }}
-          >
-            {game.rightNumber}
-          </span>
-        </div>
+          {game.rightNumber}
+        </span>
       </div>
 
       {/* TIMES with Icons and Status */}
@@ -180,17 +191,25 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
         <div className="flex-1 text-center py-4 border-r border-gray-200">
           <div className="flex items-center justify-center gap-1 mb-1">
             <Calendar className="w-3 h-3 text-orange-500" />
-            <p className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-wider">OPEN TIME</p>
+            <p className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-wider">
+              OPEN TIME
+            </p>
           </div>
-          <p className="text-sm font-mono font-bold text-gray-800">{formatTime(game.openTime)}</p>
+          <p className="text-sm font-mono font-bold text-gray-800">
+            {formatTime(game.openTime)}
+          </p>
         </div>
 
         <div className="flex-1 text-center py-4">
           <div className="flex items-center justify-center gap-1 mb-1">
             <TrendingUp className="w-3 h-3 text-purple-500" />
-            <p className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-wider">CLOSE TIME</p>
+            <p className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-wider">
+              CLOSE TIME
+            </p>
           </div>
-          <p className="text-sm font-mono font-bold text-gray-800">{formatTime(game.closeTime)}</p>
+          <p className="text-sm font-mono font-bold text-gray-800">
+            {formatTime(game.closeTime)}
+          </p>
         </div>
       </div>
 

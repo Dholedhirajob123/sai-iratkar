@@ -20,10 +20,59 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // 🔥 Secret admin access counter
+  const [clickCount, setClickCount] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
 
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login } = useAuth();
+
+  // 🔥 Handle secret logo clicks for admin access
+// 🔥 Handle secret logo clicks for admin access
+const handleSecretLogoClick = () => {
+  const now = Date.now();
+  
+  // Reset counter if more than 2 seconds between clicks
+  if (now - lastClickTime > 2000) {
+    setClickCount(1);
+  } else {
+    setClickCount(prev => prev + 1);
+  }
+  
+  setLastClickTime(now);
+  
+  // Show visual feedback
+  if (clickCount === 2) {
+    toast({
+      title: "⭐ Star Matka",
+      description: `${5 - clickCount} more taps to unlock Star Matka Dashboard!`,
+      duration: 800,
+    });
+  }
+  
+  if (clickCount === 3) {
+    toast({
+      title: "✨ Almost there...",
+      description: `${5 - clickCount} more taps for exclusive dashboard`,
+      duration: 800,
+    });
+  }
+  
+  // 🔥 5 clicks = Star Matka Dashboard
+  if (clickCount === 4) {
+    toast({
+      title: "🌟 Star Matka Unlocked!",
+      description: "Opening exclusive dashboard...",
+      duration: 1500,
+    });
+    setTimeout(() => {
+      navigate("/star-matka");
+      setClickCount(0);
+    }, 500);
+  }
+};
 
   const validateForm = () => {
     if (phone.length !== 10) {
@@ -115,18 +164,33 @@ const Login = () => {
         <div className="text-center mb-8">
           <div className="relative inline-block">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
-            <div className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br  rounded-2xl shadow-xl mb-4 overflow-hidden">
-              {/* App Icon Image */}
+            <div 
+              className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br rounded-2xl shadow-xl mb-4 overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-200"
+              onClick={handleSecretLogoClick}
+            >
+              {/* App Icon Image - NOW CLICKABLE */}
               <img 
                 src="/icons/launchericon-192x192.png" 
                 alt="Matka King Logo" 
                 className="w-16 h-16 object-contain"
               />
               <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
+              
+              {/* 🔥 Secret visual hint (only visible to those who know) */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/10 rounded-2xl">
+                <span className="text-[8px] font-mono text-white bg-black/50 px-1 rounded">Admin</span>
+              </div>
             </div>
           </div>
           <h1 className="text-3xl font-mono font-black text-gray-900">MATKA KING</h1>
           <p className="text-xs font-mono text-gray-500 mt-2">Login to your account and start playing</p>
+          
+          {/* 🔥 Secret counter indicator (optional - shows how many clicks remaining) */}
+          {clickCount > 0 && clickCount < 4 && (
+            <div className="mt-2 text-[8px] font-mono text-blue-500 animate-pulse">
+              {5 - clickCount} more clicks for admin...
+            </div>
+          )}
         </div>
 
         {/* Login Card */}

@@ -36,17 +36,25 @@ import GameCard from "@/components/GameCard";
 import GameTypeSelector from "@/components/GameTypeSelector";
 import BottomNav from "@/components/BottomNav";
 
+// Extended Game interface with color properties
+interface ExtendedGame extends Game {
+  leftNumberColor?: string;
+  centerNumberColor?: string;
+  rightNumberColor?: string;
+  leftNumberBgColor?: string;
+  centerNumberBgColor?: string;
+  rightNumberBgColor?: string;
+}
+
 const getTodayDateTime = (time: string): Date => {
   const now = new Date();
   const [hours, minutes] = time.split(":").map(Number);
-
   const date = new Date(now);
   date.setHours(hours, minutes, 0, 0);
-
   return date;
 };
 
-const canPlayGame = (game: Game, playType: "open" | "close") => {
+const canPlayGame = (game: ExtendedGame, playType: "open" | "close") => {
   const now = new Date();
   const openDate = getTodayDateTime(game.openTime);
   const closeDate = getTodayDateTime(game.closeTime);
@@ -54,11 +62,9 @@ const canPlayGame = (game: Game, playType: "open" | "close") => {
   if (playType === "open") {
     return now < openDate;
   }
-
   if (playType === "close") {
     return now < closeDate;
   }
-
   return false;
 };
 
@@ -67,11 +73,11 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<ExtendedGame[]>([]);
   const [gamesLoading, setGamesLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedGame, setSelectedGame] = useState<{
-    game: Game;
+    game: ExtendedGame;
     playType: "open" | "close";
   } | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -86,30 +92,39 @@ const Dashboard = () => {
         navigate("/login", { replace: true });
         return;
       }
-
       if (user.role === "ADMIN") {
         navigate("/admin", { replace: true });
       }
     }
   }, [user, loading, navigate]);
 
-  const loadGames = useCallback(async () => {
-    try {
-      setGamesLoading(true);
-      const allGames = await getGames();
-      setGames(allGames || []);
-      setCurrentTime(new Date());
-    } catch (error) {
-      console.error("Failed to load games:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load games.",
-        variant: "destructive",
-      });
-    } finally {
-      setGamesLoading(false);
-    }
-  }, [toast]);
+const loadGames = useCallback(async () => {
+  try {
+    setGamesLoading(true);
+    const allGames = await getGames();
+    // Pass colors exactly as from admin, don't add defaults
+    const gamesWithColors = allGames.map(game => ({
+      ...game,
+      leftNumberColor: (game as ExtendedGame).leftNumberColor,
+      centerNumberColor: (game as ExtendedGame).centerNumberColor,
+      rightNumberColor: (game as ExtendedGame).rightNumberColor,
+      leftNumberBgColor: (game as ExtendedGame).leftNumberBgColor,
+      centerNumberBgColor: (game as ExtendedGame).centerNumberBgColor,
+      rightNumberBgColor: (game as ExtendedGame).rightNumberBgColor,
+    }));
+    setGames(gamesWithColors || []);
+    setCurrentTime(new Date());
+  } catch (error) {
+    console.error("Failed to load games:", error);
+    toast({
+      title: "Error",
+      description: "Failed to load games.",
+      variant: "destructive",
+    });
+  } finally {
+    setGamesLoading(false);
+  }
+}, [toast]);
 
   useEffect(() => {
     if (user) {
@@ -311,9 +326,9 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => {
-                  window.open(
+                  window.open( 
                     `https://wa.me/?text=${encodeURIComponent(
-                      "Check out Matka King! " + window.location.origin
+                      "Check out Si King! " + window.location.origin
                     )}`,
                     "_blank"
                   );
@@ -366,7 +381,7 @@ const Dashboard = () => {
               <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
                 <img 
                   src="/icons/launchericon-192x192.png" 
-                  alt="Matka King Logo" 
+                  alt="Si King Logo" 
                   className="w-10 h-10 object-contain"
                 />
               </div>
@@ -382,12 +397,12 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="p-6 border-b border-gray-100 bg-gradient-to-r">
+        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
               <img 
                 src="/icons/launchericon-192x192.png" 
-                alt="Matka King Logo" 
+                alt="Si King Logo" 
                 className="w-10 h-10 object-contain"
               />
             </div>
@@ -465,7 +480,7 @@ const Dashboard = () => {
                 <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
                   <img 
                     src="/icons/launchericon-192x192.png" 
-                    alt="Matka King Logo" 
+                    alt="Si King Logo" 
                     className="w-9 h-9 object-contain"
                   />
                   <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
@@ -473,7 +488,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h1 className="text-xl font-mono font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Matka King
+                  Si King
                 </h1>
                 <p className="text-[10px] text-gray-500">{timeStr}</p>
               </div>
@@ -584,7 +599,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {/* Games List - Displaying Admin Custom Colors */}
+      {/* Games List - Pass games with colors to GameCard */}
       <div className="px-4 space-y-4 pb-24">
         {gamesLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
@@ -601,7 +616,7 @@ const Dashboard = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-4 overflow-hidden">
               <img 
                 src="/icons/launchericon-192x192.png" 
-                alt="Matka King Logo" 
+                alt="Si King Logo" 
                 className="w-12 h-12 object-contain"
               />
             </div>
@@ -610,13 +625,14 @@ const Dashboard = () => {
           </div>
         ) : (
           games.map((game) => {
-            // Pass the full game object with all color properties to GameCard
             return (
               <GameCard
                 key={game.id}
                 game={game}
                 onPlayOpen={(g) => setSelectedGame({ game: g, playType: "open" })}
-                onPlayClose={(g) => setSelectedGame({ game: g, playType: "close" })}
+                onPlayClose={(g) =>
+                  setSelectedGame({ game: g, playType: "close" })
+                }
               />
             );
           })
