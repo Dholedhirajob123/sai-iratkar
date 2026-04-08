@@ -33,42 +33,36 @@ const Login = () => {
 // 🔥 Handle secret logo clicks for admin access
 const handleSecretLogoClick = () => {
   const now = Date.now();
-  
-  // Reset counter if more than 2 seconds between clicks
-  if (now - lastClickTime > 2000) {
-    setClickCount(1);
-  } else {
-    setClickCount(prev => prev + 1);
+
+  let newCount = 1;
+
+  // if clicks are within 2 sec → increment
+  if (now - lastClickTime <= 2000) {
+    newCount = clickCount + 1;
   }
-  
+
+  setClickCount(newCount);
   setLastClickTime(now);
-  
-  // Show visual feedback
-  if (clickCount === 2) {
+
+  // Optional feedback
+  if (newCount === 2 || newCount === 3 || newCount === 4) {
     toast({
-      title: "⭐ Star Matka",
-      description: `${5 - clickCount} more taps to unlock Star Matka Dashboard!`,
-      duration: 800,
+      title: "🔄 Switching Mode",
+      description: `${5 - newCount} more clicks...`,
+      duration: 600,
     });
   }
-  
-  if (clickCount === 3) {
+
+  // ✅ 5 clicks → go to OLD LOGIN PAGE
+  if (newCount === 5) {
     toast({
-      title: "✨ Almost there...",
-      description: `${5 - clickCount} more taps for exclusive dashboard`,
-      duration: 800,
+      title: "↩️ Redirecting",
+      description: "Going back to user login...",
+      duration: 1000,
     });
-  }
-  
-  // 🔥 5 clicks = Star Matka Dashboard
-  if (clickCount === 4) {
-    toast({
-      title: "🌟 Star Matka Unlocked!",
-      description: "Opening exclusive dashboard...",
-      duration: 1500,
-    });
+
     setTimeout(() => {
-      navigate("/star-matka");
+      navigate("/login"); // 👈 your old login page route
       setClickCount(0);
     }, 500);
   }
@@ -136,15 +130,21 @@ const handleSecretLogoClick = () => {
         description: `Hello ${user.name}, you have successfully logged in.`,
       });
 
-      const role = String(user.role || data.role || "").toUpperCase();
+     const role = String(user.role || data.role || "").toUpperCase();
 
-      if (role === "ADMIN") {
-        navigate("/admin", { replace: true });
-      } else if (role === "USER") {
-        navigate("/dashboard", { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
+// ❌ Block USER here
+if (role !== "ADMIN") {
+  toast({
+    title: "Access Denied",
+    description: "Only admins can login here",
+    variant: "destructive",
+  });
+
+  return; // ⛔ stop execution
+}
+
+// ✅ Only ADMIN allowed
+navigate("/admin", { replace: true });
     } catch (error: any) {
       console.error("LOGIN ERROR:", error);
       toast({
@@ -198,7 +198,7 @@ const handleSecretLogoClick = () => {
           <div className="px-6 py-8">
             <div className="flex items-center gap-2 mb-6">
               <Shield className="w-5 h-5 text-blue-600" />
-              <h2 className="text-xl font-mono font-bold text-gray-900">Welcome Back</h2>
+              <h2 className="text-xl font-mono font-bold text-gray-900">Admin Login</h2>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -276,20 +276,6 @@ const handleSecretLogoClick = () => {
                 )}
               </button>
             </form>
-
-            {/* Register Link */}
-            <div className="mt-6 pt-4 border-t border-gray-200">
-              <p className="text-center text-xs font-mono text-gray-600">
-                Don't have an account?{" "}
-                <Link 
-                  to="/register" 
-                  className="text-blue-600 hover:text-blue-700 font-mono font-bold hover:underline transition-colors inline-flex items-center gap-1"
-                >
-                  Create Account
-                  <ArrowRight className="w-3 h-3" />
-                </Link>
-              </p>
-            </div>
           </div>
         </div>
       </div>
