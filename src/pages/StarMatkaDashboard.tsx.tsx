@@ -1,171 +1,300 @@
 import { useState } from "react";
-import { Crown, Lock, User, Shield, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { 
+  Star, 
+  Phone, 
+  Lock, 
+  Eye, 
+  EyeOff,
+  Sparkles,
+  Shield,
+  ArrowRight,
+  AlertCircle
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { loginUser, getCurrentUser } from "@/lib/gameApi";
 
-interface AdminLoginProps {
-  onLoginSuccess: (token: string) => void;
-}
-
-const AdminLogin = ({ onLoginSuccess }: AdminLoginProps) => {
-  const [username, setUsername] = useState("");
+const Login = () => {
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  // 🔥 Secret admin access counter
+  const [clickCount, setClickCount] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
+
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { login } = useAuth();
+
+  // 🔥 Handle secret logo clicks for admin access
+// 🔥 Handle secret logo clicks for admin access
+const handleSecretLogoClick = () => {
+  const now = Date.now();
+  
+  // Reset counter if more than 2 seconds between clicks
+  if (now - lastClickTime > 2000) {
+    setClickCount(1);
+  } else {
+    setClickCount(prev => prev + 1);
+  }
+  
+  setLastClickTime(now);
+  
+  // Show visual feedback
+  if (clickCount === 2) {
+    toast({
+      title: "⭐ Star Matka",
+      description: `${5 - clickCount} more taps to unlock Star Matka Dashboard!`,
+      duration: 800,
+    });
+  }
+  
+  if (clickCount === 3) {
+    toast({
+      title: "✨ Almost there...",
+      description: `${5 - clickCount} more taps for exclusive dashboard`,
+      duration: 800,
+    });
+  }
+  
+  // 🔥 5 clicks = Star Matka Dashboard
+  if (clickCount === 4) {
+    toast({
+      title: "🌟 Star Matka Unlocked!",
+      description: "Opening exclusive dashboard...",
+      duration: 1500,
+    });
+    setTimeout(() => {
+      navigate("/star-matka");
+      setClickCount(0);
+    }, 500);
+  }
+};
+
+  const validateForm = () => {
+    if (phone.length !== 10) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Phone number must be exactly 10 digits.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (password.length < 4) {
+      toast({
+        title: "Invalid Password",
+        description: "Password must be at least 4 characters.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
 
-    // Simulate API call to localhost:5053
+    if (!validateForm()) return;
+
     try {
-      // Replace with your actual API endpoint
-      const response = await fetch("http://localhost:5053/api/admin/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
+      setLoading(true);
+
+      const data = await loginUser({
+        mobileNumber: phone,
+        password: password,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        // Store token in localStorage for persistence
-        localStorage.setItem("admin_token", data.token);
-        localStorage.setItem("admin_user", username);
-        onLoginSuccess(data.token);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || "Invalid username or password");
+      if (!data?.token) {
+        toast({
+          title: "Login Failed",
+          description: "Invalid login response from server.",
+          variant: "destructive",
+        });
+        return;
       }
-    } catch (err) {
-      // For demo purposes - simulate successful login with demo credentials
-      if (username === "admin" && password === "admin123") {
-        const mockToken = "mock_jwt_token_" + Date.now();
-        localStorage.setItem("admin_token", mockToken);
-        localStorage.setItem("admin_user", username);
-        onLoginSuccess(mockToken);
-      } else {
-        setError("Invalid username or password. Try: admin / admin123");
+
+      const user = await getCurrentUser(data.token);
+
+      if (!user) {
+        toast({
+          title: "Login Failed",
+          description: "Unable to fetch logged in user details.",
+          variant: "destructive",
+        });
+        return;
       }
+
+      login(user, data.token);
+
+      toast({
+        title: "Welcome Back!",
+        description: `Hello ${user.name}, you have successfully logged in.`,
+      });
+
+      const role = String(user.role || data.role || "").toUpperCase();
+
+      if (role === "ADMIN") {
+        navigate("/admin", { replace: true });
+      } else if (role === "USER") {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    } catch (error: any) {
+      console.error("LOGIN ERROR:", error);
+      toast({
+        title: "Login Failed",
+        description: error?.message || "Invalid credentials or server error",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo Section */}
+        {/* Logo and Brand */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-yellow-500/20 mb-4">
-            <Crown className="w-10 h-10 text-white" />
+          <div className="relative inline-block">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
+            <div 
+              className="relative inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br rounded-2xl shadow-xl mb-4 overflow-hidden cursor-pointer hover:scale-105 transition-transform duration-200"
+              onClick={handleSecretLogoClick}
+            >
+              {/* App Icon Image - NOW CLICKABLE */}
+              <img 
+                src="/icons/launchericon-192x192.png" 
+                alt="Matka King Logo" 
+                className="w-16 h-16 object-contain"
+              />
+              <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
+              
+              {/* 🔥 Secret visual hint (only visible to those who know) */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/10 rounded-2xl">
+                <span className="text-[8px] font-mono text-white bg-black/50 px-1 rounded">Admin</span>
+              </div>
+            </div>
           </div>
-          <h1 className="text-2xl font-mono font-bold text-white tracking-wider">STAR MATKA</h1>
-          <p className="text-[10px] text-yellow-500/70 font-mono mt-1">Admin Portal</p>
+          <h1 className="text-3xl font-mono font-black text-gray-900">MATKA KING</h1>
+          <p className="text-xs font-mono text-gray-500 mt-2">Login to your account and start playing</p>
+          
+          {/* 🔥 Secret counter indicator (optional - shows how many clicks remaining) */}
+          {clickCount > 0 && clickCount < 4 && (
+            <div className="mt-2 text-[8px] font-mono text-blue-500 animate-pulse">
+              {5 - clickCount} more clicks for admin...
+            </div>
+          )}
         </div>
 
         {/* Login Card */}
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-yellow-500/20 p-6 shadow-xl">
-          <div className="flex items-center gap-2 mb-6 pb-3 border-b border-gray-700">
-            <Shield className="w-5 h-5 text-yellow-500" />
-            <h2 className="text-lg font-mono font-bold text-white">Admin Login</h2>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Username Field */}
-            <div>
-              <label className="block text-[10px] font-mono text-gray-400 mb-1.5">USERNAME</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-gray-900/80 border border-gray-700 rounded-xl py-2.5 pl-10 pr-3 text-white text-sm font-mono focus:border-yellow-500/50 focus:outline-none transition-colors"
-                  placeholder="Enter username"
-                  required
-                />
-              </div>
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          <div className="px-6 py-8">
+            <div className="flex items-center gap-2 mb-6">
+              <Shield className="w-5 h-5 text-blue-600" />
+              <h2 className="text-xl font-mono font-bold text-gray-900">Welcome Back</h2>
             </div>
 
-            {/* Password Field */}
-            <div>
-              <label className="block text-[10px] font-mono text-gray-400 mb-1.5">PASSWORD</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-gray-900/80 border border-gray-700 rounded-xl py-2.5 pl-10 pr-10 text-white text-sm font-mono focus:border-yellow-500/50 focus:outline-none transition-colors"
-                  placeholder="Enter password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Phone Number Field */}
+              <div>
+                <label className="text-xs font-mono font-bold text-gray-700 mb-1.5 block">
+                  Phone Number
+                </label>
+                <div className="relative group">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                    placeholder="Enter 10 digit mobile number"
+                    className="w-full bg-gray-50 border-2 border-gray-200 pl-10 pr-4 py-3 text-sm font-mono font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white rounded-xl transition-all duration-200"
+                    autoComplete="off"
+                  />
+                </div>
+                {phone && phone.length !== 10 && phone.length > 0 && (
+                  <p className="mt-1 text-[10px] font-mono text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Phone number must be 10 digits
+                  </p>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <label className="text-xs font-mono font-bold text-gray-700 mb-1.5 block">
+                  Password
+                </label>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full bg-gray-50 border-2 border-gray-200 pl-10 pr-10 py-3 text-sm font-mono font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white rounded-xl transition-all duration-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {password && password.length < 4 && (
+                  <p className="mt-1 text-[10px] font-mono text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Password must be at least 4 characters
+                  </p>
+                )}
+              </div>
+
+              {/* Login Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-mono font-bold py-3.5 text-sm rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Authenticating...
+                  </>
+                ) : (
+                  <>
+                    Login
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Register Link */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <p className="text-center text-xs font-mono text-gray-600">
+                Don't have an account?{" "}
+                <Link 
+                  to="/register" 
+                  className="text-blue-600 hover:text-blue-700 font-mono font-bold hover:underline transition-colors inline-flex items-center gap-1"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-gray-500 hover:text-gray-300" />
-                  ) : (
-                    <Eye className="w-4 h-4 text-gray-500 hover:text-gray-300" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-2.5">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <p className="text-[11px] text-red-400 font-mono">{error}</p>
-              </div>
-            )}
-
-            {/* Demo Credentials Hint */}
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-2.5">
-              <p className="text-[9px] text-blue-400 font-mono text-center">
-                Demo credentials: admin / admin123
+                  Create Account
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
               </p>
             </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl font-mono font-bold text-white text-sm hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  LOGGING IN...
-                </span>
-              ) : (
-                "LOGIN TO ADMIN PANEL"
-              )}
-            </button>
-          </form>
-
-          {/* Back Link */}
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => window.history.back()}
-              className="text-[10px] font-mono text-gray-500 hover:text-yellow-400 transition-colors"
-            >
-              ← Back to Dashboard
-            </button>
           </div>
         </div>
-
-        {/* Footer Note */}
-        <p className="text-center text-[8px] font-mono text-gray-600 mt-6">
-          Secure Admin Access • All activities are logged
-        </p>
       </div>
     </div>
   );
 };
 
-export default AdminLogin;
+export default Login;

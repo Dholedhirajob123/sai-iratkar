@@ -188,7 +188,7 @@ const handleSecretLogoClick = () => {
           {/* 🔥 Secret counter indicator (optional - shows how many clicks remaining) */}
           {clickCount > 0 && clickCount < 4 && (
             <div className="mt-2 text-[8px] font-mono text-blue-500 animate-pulse">
-              {5 - clickCount} more clicks for admin...
+              {5 - clickCount} more clicks for admin..
             </div>
           )}
         </div>
@@ -205,7 +205,7 @@ const handleSecretLogoClick = () => {
               {/* Phone Number Field */}
               <div>
                 <label className="text-xs font-mono font-bold text-gray-700 mb-1.5 block">
-                  Phone Number
+                  Phone Number 1234
                 </label>
                 <div className="relative group">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -266,7 +266,7 @@ const handleSecretLogoClick = () => {
                 {loading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    Authenticating...
+                    Login...
                   </>
                 ) : (
                   <>
