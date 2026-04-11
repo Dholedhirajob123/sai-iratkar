@@ -82,15 +82,18 @@ const AdminResults = () => {
     loadData(true);
   };
 
-  const gameTypes = useMemo(() => {
-    const types = new Set(results.map(r => r.gameType).filter(Boolean));
-    return ["all", ...Array.from(types)];
+  // Define available time types (Open and Close)
+  const timeTypes = useMemo(() => {
+    const types = new Set(results.map(r => r.timeType).filter(Boolean));
+    // Ensure we have both Open and Close if they exist in data
+    return ["all", "OPEN", "CLOSE", ...Array.from(types).filter(t => t !== "OPEN" && t !== "CLOSE")];
   }, [results]);
 
   const filteredResults = useMemo(() => {
     return results.filter((result) => {
       const gameName = result.gameName || "";
       const gameType = result.gameType || "";
+      const timeType = result.timeType || "";
 
       const displayNumber = `${result.leftNumber || "-"} ${result.centerNumber || "-"} ${result.rightNumber || "-"}`;
 
@@ -101,7 +104,18 @@ const AdminResults = () => {
 
       const resultGameId = result.game?.id?.toString();
       const matchesGame = selectedGame === "all" || resultGameId === selectedGame;
-      const matchesType = selectedType === "all" || result.gameType === selectedType;
+      
+      // Updated type filter to handle both gameType and timeType
+      let matchesType = selectedType === "all";
+      if (!matchesType) {
+        if (selectedType === "OPEN" || selectedType === "CLOSE") {
+          // Filter by timeType for Open/Close
+          matchesType = timeType?.toUpperCase() === selectedType;
+        } else {
+          // Filter by gameType for other types
+          matchesType = result.gameType === selectedType;
+        }
+      }
 
       return matchesSearch && matchesGame && matchesType;
     });
@@ -155,94 +169,70 @@ const AdminResults = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with Stats */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-6 text-white shadow-xl">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
-              <Trophy className="w-8 h-8" />
-            </div>
+      {/* Stats Cards - Header Removed */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-mono font-black">Results Dashboard</h2>
-              <p className="text-xs font-mono text-blue-100 mt-1">Track and manage declared results</p>
+              <p className="text-[10px] font-mono opacity-80">Total Results</p>
+              <p className="text-2xl font-mono font-black mt-1">{stats.totalResults}</p>
+            </div>
+            <div className="bg-white/20 p-2 rounded-lg">
+              <BarChart3 className="w-4 h-4" />
             </div>
           </div>
-          
-          {/* Refresh Button */}
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-mono text-xs font-bold rounded-lg flex items-center gap-2 transition-all duration-200 backdrop-blur-sm disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
         </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-mono opacity-80">Total Results</p>
-                <p className="text-2xl font-mono font-black mt-1">{stats.totalResults}</p>
-              </div>
-              <div className="bg-white/20 p-2 rounded-lg">
-                <BarChart3 className="w-4 h-4" />
-              </div>
+        
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-mono opacity-80">Total Payout</p>
+              <p className="text-xl font-mono font-black mt-1">₹{stats.totalPayout.toLocaleString()}</p>
+            </div>
+            <div className="bg-white/20 p-2 rounded-lg">
+              <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-mono opacity-80">Total Payout</p>
-                <p className="text-xl font-mono font-black mt-1">₹{stats.totalPayout.toLocaleString()}</p>
-              </div>
-              <div className="bg-white/20 p-2 rounded-lg">
-                <DollarSign className="w-4 h-4" />
-              </div>
+        </div>
+        
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-mono opacity-80">Total Winners</p>
+              <p className="text-2xl font-mono font-black mt-1">{stats.totalWinners}</p>
+            </div>
+            <div className="bg-white/20 p-2 rounded-lg">
+              <Users className="w-4 h-4" />
             </div>
           </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-mono opacity-80">Total Winners</p>
-                <p className="text-2xl font-mono font-black mt-1">{stats.totalWinners}</p>
-              </div>
-              <div className="bg-white/20 p-2 rounded-lg">
-                <Users className="w-4 h-4" />
-              </div>
+        </div>
+        
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-mono opacity-80">Unique Games</p>
+              <p className="text-2xl font-mono font-black mt-1">{stats.uniqueGames}</p>
+            </div>
+            <div className="bg-white/20 p-2 rounded-lg">
+              <Star className="w-4 h-4" />
             </div>
           </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-mono opacity-80">Unique Games</p>
-                <p className="text-2xl font-mono font-black mt-1">{stats.uniqueGames}</p>
-              </div>
-              <div className="bg-white/20 p-2 rounded-lg">
-                <Star className="w-4 h-4" />
-              </div>
+        </div>
+        
+        <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl p-4 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-mono opacity-80">Avg Payout</p>
+              <p className="text-xl font-mono font-black mt-1">₹{Math.round(stats.avgPayout).toLocaleString()}</p>
             </div>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-mono opacity-80">Avg Payout</p>
-                <p className="text-xl font-mono font-black mt-1">₹{Math.round(stats.avgPayout).toLocaleString()}</p>
-              </div>
-              <div className="bg-white/20 p-2 rounded-lg">
-                <TrendingUp className="w-4 h-4" />
-              </div>
+            <div className="bg-white/20 p-2 rounded-lg">
+              <TrendingUp className="w-4 h-4" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Search and Filter Bar */}
+      {/* Search and Filter Bar with Refresh Button */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
@@ -280,13 +270,25 @@ const AdminResults = () => {
               className="bg-gray-50 border-2 border-gray-200 px-5 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-xl cursor-pointer hover:bg-gray-100 transition-all duration-200"
             >
               <option value="all">All Types</option>
-              {gameTypes.filter(t => t !== "all").map((type) => (
+              <option value="OPEN" className="text-green-600 font-bold">🔓 OPEN</option>
+              <option value="CLOSE" className="text-red-600 font-bold">🔒 CLOSE</option>
+              {timeTypes.filter(t => t !== "all" && t !== "OPEN" && t !== "CLOSE").map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
               ))}
             </select>
           </div>
+
+          {/* Refresh Button moved here */}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-mono text-sm font-bold rounded-xl flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
         </div>
       </div>
 
@@ -340,10 +342,22 @@ const AdminResults = () => {
                   {dateResults.map((result) => (
                     <div
                       key={result.id}
-                      className="group bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300 cursor-pointer"
+                      className={`group bg-gradient-to-br from-gray-50 to-white rounded-xl border overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer ${
+                        result.timeType?.toUpperCase() === "OPEN" 
+                          ? "border-green-200 hover:border-green-400" 
+                          : result.timeType?.toUpperCase() === "CLOSE"
+                          ? "border-red-200 hover:border-red-400"
+                          : "border-gray-200 hover:border-blue-200"
+                      }`}
                     >
                       {/* Game Header */}
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b border-blue-100">
+                      <div className={`px-4 py-3 border-b ${
+                        result.timeType?.toUpperCase() === "OPEN" 
+                          ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-100" 
+                          : result.timeType?.toUpperCase() === "CLOSE"
+                          ? "bg-gradient-to-r from-red-50 to-rose-50 border-red-100"
+                          : "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100"
+                      }`}>
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-[10px] font-mono font-bold text-blue-600 uppercase tracking-wider">
@@ -353,8 +367,20 @@ const AdminResults = () => {
                               {result.gameType}
                             </p>
                           </div>
-                          <div className="bg-blue-100 p-1.5 rounded-lg">
-                            <Sparkles className="w-3 h-3 text-blue-600" />
+                          <div className={`p-1.5 rounded-lg ${
+                            result.timeType?.toUpperCase() === "OPEN" 
+                              ? "bg-green-100" 
+                              : result.timeType?.toUpperCase() === "CLOSE"
+                              ? "bg-red-100"
+                              : "bg-blue-100"
+                          }`}>
+                            {result.timeType?.toUpperCase() === "OPEN" ? (
+                              <span className="text-[8px] font-mono font-bold text-green-600">OPEN</span>
+                            ) : result.timeType?.toUpperCase() === "CLOSE" ? (
+                              <span className="text-[8px] font-mono font-bold text-red-600">CLOSE</span>
+                            ) : (
+                              <Sparkles className="w-3 h-3 text-blue-600" />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -391,7 +417,13 @@ const AdminResults = () => {
                               <Award className="w-3 h-3 text-gray-500" />
                               <p className="text-[8px] font-mono text-gray-500">TYPE</p>
                             </div>
-                            <p className="text-[9px] font-mono font-bold text-blue-600 uppercase">
+                            <p className={`text-[9px] font-mono font-bold uppercase ${
+                              result.timeType?.toUpperCase() === "OPEN" 
+                                ? "text-green-600" 
+                                : result.timeType?.toUpperCase() === "CLOSE"
+                                ? "text-red-600"
+                                : "text-blue-600"
+                            }`}>
                               {result.timeType || "RESULT"}
                             </p>
                           </div>
@@ -415,7 +447,13 @@ const AdminResults = () => {
 
                       {/* Hover Effect Badge */}
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="bg-blue-500 rounded-full p-1.5 shadow-lg">
+                        <div className={`rounded-full p-1.5 shadow-lg ${
+                          result.timeType?.toUpperCase() === "OPEN" 
+                            ? "bg-green-500" 
+                            : result.timeType?.toUpperCase() === "CLOSE"
+                            ? "bg-red-500"
+                            : "bg-blue-500"
+                        }`}>
                           <Trophy className="w-3 h-3 text-white" />
                         </div>
                       </div>

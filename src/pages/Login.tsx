@@ -48,7 +48,7 @@ const handleSecretLogoClick = () => {
   if (newCount === 2) {
     toast({
       title: "⭐ Star Matka",
-      description: `${5 - newCount} more taps to unlock Admin Login!`,
+      description: `${5 - newCount} `,
       duration: 800,
     });
   }
@@ -56,7 +56,7 @@ const handleSecretLogoClick = () => {
   if (newCount === 3) {
     toast({
       title: "✨ Almost there...",
-      description: `${5 - newCount} more taps`,
+      description: `${5 - newCount} `,
       duration: 800,
     });
   }
@@ -64,7 +64,7 @@ const handleSecretLogoClick = () => {
   // ✅ FINAL CLICK (5th click)
   if (newCount === 5) {
     toast({
-      title: "🔐 Admin Access",
+      title: "🔐",
       description: "Opening Admin Login...",
       duration: 1200,
     });
@@ -183,7 +183,7 @@ if (role === "USER") {
               {/* App Icon Image - NOW CLICKABLE */}
               <img 
                 src="/icons/launchericon-192x192.png" 
-                alt="Matka King Logo" 
+                alt="Si King Logo" 
                 className="w-16 h-16 object-contain"
               />
               <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
@@ -194,13 +194,13 @@ if (role === "USER") {
               </div>
             </div>
           </div>
-          <h1 className="text-3xl font-mono font-black text-gray-900">MATKA KING</h1>
+          <h1 className="text-3xl font-mono font-black text-gray-900">Si King</h1>
           <p className="text-xs font-mono text-gray-500 mt-2">Login to your account and start playing</p>
           
           {/* 🔥 Secret counter indicator (optional - shows how many clicks remaining) */}
           {clickCount > 0 && clickCount < 4 && (
             <div className="mt-2 text-[8px] font-mono text-blue-500 animate-pulse">
-              {5 - clickCount} more clicks for admin..
+              {5 - clickCount} 
             </div>
           )}
         </div>
@@ -217,7 +217,7 @@ if (role === "USER") {
               {/* Phone Number Field */}
               <div>
                 <label className="text-xs font-mono font-bold text-gray-700 mb-1.5 block">
-                  Phone Number 1234
+                  Phone Number 
                 </label>
                 <div className="relative group">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />

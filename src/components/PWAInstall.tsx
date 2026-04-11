@@ -55,7 +55,7 @@ const PWAInstall = () => {
               <div>
                 <h3 className="text-sm font-mono font-bold text-gray-900">Install App</h3>
                 <p className="text-[10px] font-mono text-gray-500">
-                  Install Matka King for a better experience
+                  Install Si King for a better experience
                 </p>
               </div>
             </div>

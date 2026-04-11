@@ -98,19 +98,26 @@ const Dashboard = () => {
     }
   }, [user, loading, navigate]);
 
+// In Dashboard.tsx, update the loadGames function to ensure colors are passed properly:
+
 const loadGames = useCallback(async () => {
   try {
     setGamesLoading(true);
     const allGames = await getGames();
-    // Pass colors exactly as from admin, don't add defaults
+    // Pass colors exactly as from admin - preserve all color properties
     const gamesWithColors = allGames.map(game => ({
       ...game,
-      leftNumberColor: (game as ExtendedGame).leftNumberColor,
-      centerNumberColor: (game as ExtendedGame).centerNumberColor,
-      rightNumberColor: (game as ExtendedGame).rightNumberColor,
-      leftNumberBgColor: (game as ExtendedGame).leftNumberBgColor,
-      centerNumberBgColor: (game as ExtendedGame).centerNumberBgColor,
-      rightNumberBgColor: (game as ExtendedGame).rightNumberBgColor,
+      // Number colors
+      leftNumberColor: (game as ExtendedGame).leftNumberColor || "#000000",
+      centerNumberColor: (game as ExtendedGame).centerNumberColor || "#000000",
+      rightNumberColor: (game as ExtendedGame).rightNumberColor || "#000000",
+      // Background colors
+      leftNumberBgColor: (game as ExtendedGame).leftNumberBgColor || "#f3f4f6",
+      centerNumberBgColor: (game as ExtendedGame).centerNumberBgColor || "#fde68a",
+      rightNumberBgColor: (game as ExtendedGame).rightNumberBgColor || "#f3f4f6",
+      // Rates
+      openRate: (game as ExtendedGame).openRate || 95,
+      closeRate: (game as ExtendedGame).closeRate || 95,
     }));
     setGames(gamesWithColors || []);
     setCurrentTime(new Date());
@@ -566,12 +573,7 @@ const loadGames = useCallback(async () => {
                 <div className="p-3 bg-white rounded-xl shadow-md">
                   <Award className="w-6 h-6 text-green-600" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-[10px] font-mono text-gray-500">Member Since</p>
-                  <p className="text-base font-mono font-bold text-gray-900">
-                    {new Date().getFullYear()}
-                  </p>
-                </div>
+               
               </div>
             </div>
           </div>

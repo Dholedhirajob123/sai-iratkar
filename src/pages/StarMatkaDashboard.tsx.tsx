@@ -171,7 +171,7 @@ navigate("/admin", { replace: true });
               {/* App Icon Image - NOW CLICKABLE */}
               <img 
                 src="/icons/launchericon-192x192.png" 
-                alt="Matka King Logo" 
+                alt="Si King Logo" 
                 className="w-16 h-16 object-contain"
               />
               <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
@@ -182,7 +182,7 @@ navigate("/admin", { replace: true });
               </div>
             </div>
           </div>
-          <h1 className="text-3xl font-mono font-black text-gray-900">MATKA KING</h1>
+          <h1 className="text-3xl font-mono font-black text-gray-900">Si King</h1>
           <p className="text-xs font-mono text-gray-500 mt-2">Login to your account and start playing</p>
           
           {/* 🔥 Secret counter indicator (optional - shows how many clicks remaining) */}

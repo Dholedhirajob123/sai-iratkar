@@ -26,13 +26,13 @@ const SINGLE_PANA_NUMBERS = [
   "128", "137", "146", "236", "245", "290", "380", "470", "489", "560", "579", "678",
   "129", "138", "147", "156", "237", "146", "345", "390", "480", "570", "589", "679",
   "120", "139", "148", "157", "238", "247", "256", "346", "490", "580", "670", "689",
-  "130", "149", "158", "167", "239", "248", "257", "347", "356", "357", "367", "468",
-  "140", "159", "168", "230", "249", "258", "267", "348", "357", "358", "368", "378",
-  "123", "150", "169", "178", "240", "269", "268", "349", "358", "359", "369", "379",
-  "124", "160", "179", "250", "269", "278", "340", "359", "368", "389", "389", "389",
-  "125", "134", "170", "189", "260", "279", "350", "369", "370", "450", "460", "470",
-  "126", "135", "180", "270", "234", "289", "360", "379", "356", "456", "457", "467",
-  "127", "136", "145", "190", "280", "235", "370", "389", "345", "356", "456", "457",
+  "130", "149", "158", "167", "239", "248", "257", "347", "356", "590", "680", "789",
+  "140", "159", "168", "230", "249", "258", "267", "348", "357", "456", "690", "780",
+  "123", "150", "169", "178", "240", "259", "268", "349", "358", "367", "457", "790",
+  "124", "160", "179", "250", "269", "278", "340", "359", "368", "458", "467", "890",
+  "125", "134", "170", "189", "260", "279", "350", "369", "378", "459", "468", "567",
+  "126", "135", "180", "270", "234", "289", "360", "379", "450", "469", "478", "568",
+  "127", "136", "145", "190", "280", "235", "370", "389", "460", "479", "569", "578",
 ];
 
 const DOUBLE_PANA_NUMBERS = [
@@ -188,7 +188,22 @@ const GameTypeSelector = ({
     setAmountError("");
   };
 
-  const validateAmount = (amt: number): boolean => {
+  const validateAmount = (amt: number, gameType?: string): boolean => {
+    // For SINGLE type: min ₹10, max ₹1000
+    if (gameType === "SINGLE") {
+      if (amt < 10) {
+        setAmountError("Minimum amount for SINGLE is ₹10");
+        return false;
+      }
+      if (amt > 1000) {
+        setAmountError("Maximum amount is ₹1000");
+        return false;
+      }
+      setAmountError("");
+      return true;
+    }
+    
+    // For all other types: min ₹5, max ₹1000
     if (amt < 5) {
       setAmountError("Minimum amount is ₹5");
       return false;
@@ -207,7 +222,7 @@ const GameTypeSelector = ({
     
     if (numericValue) {
       const amt = parseInt(numericValue, 10);
-      validateAmount(amt);
+      validateAmount(amt, selectedType);
     } else {
       setAmountError("");
     }
@@ -326,7 +341,7 @@ const GameTypeSelector = ({
       return;
     }
 
-    if (!validateAmount(amt)) {
+    if (!validateAmount(amt, selectedType)) {
       toast({
         title: "Invalid Amount",
         description: amountError,
@@ -416,10 +431,19 @@ const GameTypeSelector = ({
       return;
     }
 
-    if (!validateAmount(amt)) {
+    // For SP-DP-TP, keep the existing validation (min ₹5)
+    if (amt < 5) {
       toast({
         title: "Invalid Amount",
-        description: amountError,
+        description: "Minimum amount is ₹5",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (amt > 1000) {
+      toast({
+        title: "Invalid Amount",
+        description: "Maximum amount is ₹1000",
         variant: "destructive",
       });
       return;
@@ -505,12 +529,18 @@ const GameTypeSelector = ({
     return `${hour.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${ampm}`;
   };
 
-  const handleShowGameInfo = () => {
-    toast({
-      title: "🎮 Game Information",
-      description: `${game.name}\n📅 Open: ${formatTime(game.openTime)}\n⏰ Close: ${formatTime(game.closeTime)}\n🔢 Numbers: ${game.leftNumber} ${game.centerNumber} ${game.rightNumber}`,
-      variant: "default",
-    });
+  const getAmountPlaceholder = () => {
+    if (selectedType === "SINGLE") {
+      return "Min ₹10 - Max ₹1000";
+    }
+    return "Min ₹5 - Max ₹1000";
+  };
+
+  const getAmountHint = () => {
+    if (selectedType === "SINGLE") {
+      return "Minimum: ₹10 | Maximum: ₹1000 (SINGLE only)";
+    }
+    return "Minimum: ₹5 | Maximum: ₹1000";
   };
 
   return (
@@ -528,7 +558,6 @@ const GameTypeSelector = ({
             <span className="font-mono text-sm font-semibold">Back</span>
           </button>
           <div className="flex items-center gap-4">
-          
             <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl px-4 py-2 shadow-md">
               <p className="text-[10px] font-mono text-blue-100">Balance</p>
               <p className="text-lg font-mono font-bold text-white">₹{userBalance}</p>
@@ -644,7 +673,7 @@ const GameTypeSelector = ({
                 type="text"
                 value={amount}
                 onChange={(e) => handleAmountChange(e.target.value)}
-                placeholder="Min ₹5 - Max ₹1000"
+                placeholder={getAmountPlaceholder()}
                 className={`w-full bg-gray-50 border-2 px-4 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none rounded-xl transition-all duration-200 ${
                   amountError ? "border-red-400 focus:border-red-500" : "border-gray-200 focus:border-blue-400 focus:bg-white"
                 }`}
@@ -657,7 +686,7 @@ const GameTypeSelector = ({
               )}
               <p className="text-[9px] font-mono text-gray-500 mt-2 flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
-                Minimum: ₹5 | Maximum: ₹1000
+                {getAmountHint()}
               </p>
             </div>
             <button
