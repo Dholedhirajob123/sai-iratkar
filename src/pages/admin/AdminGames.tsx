@@ -33,7 +33,6 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  Palette
 } from "lucide-react";
 
 // Valid double-digit center numbers
@@ -46,129 +45,6 @@ const VALID_DOUBLE_DIGIT_CENTER = ["10", "11", "12", "13", "14", "15", "16", "17
   "71", "72", "73", "74", "75", "76", "77", "78", "79", "80",
   "81", "82", "83", "84", "85", "86", "87", "88", "89", "90",
   "91", "92", "93", "94", "95", "96", "97", "98", "99","00"];
-
-const PRESET_TEXT_COLORS = [
-  { label: "Red", value: "#dc2626" },
-  { label: "Green", value: "#15803d" },
-  { label: "Black", value: "#000000" },
-];
-
-const PRESET_BG_COLORS = [
-  { label: "Red", value: "#fef2f2" },
-  { label: "Yellow", value: "#fde68a" },
-  { label: "White", value: "#ffffff" },
-];
-
-const CENTER_BG_COLOR = "#fde68a";
-
-const ColorPicker = ({ 
-  color, 
-  onChange, 
-  label 
-}: { 
-  color: string; 
-  onChange: (color: string) => void; 
-  label: string;
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative" ref={pickerRef}>
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-gray-200 rounded-lg hover:border-blue-400 transition-all duration-200"
-      >
-        <div className="w-6 h-6 rounded border border-gray-300 shadow-sm" style={{ backgroundColor: color }} />
-        <span className="text-xs font-mono text-gray-600">{label}</span>
-        <Palette className="w-3 h-3 text-gray-400" />
-      </button>
-      {isOpen && (
-        <div className="absolute z-50 mt-2 p-3 bg-white rounded-xl shadow-2xl border border-gray-200">
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-32 h-10 rounded cursor-pointer"
-          />
-          <input
-            type="text"
-            value={color}
-            onChange={(e) => onChange(e.target.value)}
-            className="mt-2 w-full px-2 py-1 text-xs font-mono border border-gray-200 rounded"
-          />
-        </div>
-      )}
-    </div>
-  );
-};
-
-const TextColorPicker = ({
-  value,
-  onChange,
-  label,
-}: {
-  value: string;
-  onChange: (color: string) => void;
-  label: string;
-}) => (
-  <div className="space-y-2">
-    <div className="text-[10px] font-mono font-bold text-gray-500">{label}</div>
-    <div className="flex items-center gap-2">
-      {PRESET_TEXT_COLORS.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          className={`w-8 h-8 rounded-full border-2 transition-all ${
-            value === option.value ? "border-black" : "border-gray-300"
-          }`}
-          style={{ backgroundColor: option.value }}
-          title={option.label}
-        />
-      ))}
-    </div>
-  </div>
-);
-
-const BackgroundColorPicker = ({
-  value,
-  onChange,
-  label,
-}: {
-  value: string;
-  onChange: (color: string) => void;
-  label: string;
-}) => (
-  <div className="space-y-2">
-    <div className="text-[10px] font-mono font-bold text-gray-500">{label}</div>
-    <div className="flex items-center gap-2">
-      {PRESET_BG_COLORS.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          className={`w-8 h-8 rounded border-2 transition-all ${
-            value === option.value ? "border-black" : "border-gray-300"
-          }`}
-          style={{ backgroundColor: option.value }}
-          title={option.label}
-        />
-      ))}
-    </div>
-  </div>
-);
 
 // Valid Numbers List Component
 const ValidNumbersList = () => {
@@ -287,12 +163,6 @@ const AdminGames = () => {
     openTime: "00:00",
     closeTime: "00:00",
     active: true,
-    leftNumberColor: "#000000",
-    leftNumberBgColor: "#f3f4f6",
-    centerNumberColor: "#000000",
-    centerNumberBgColor: CENTER_BG_COLOR,
-    rightNumberColor: "#000000",
-    rightNumberBgColor: "#f3f4f6",
   });
 
   const { toast } = useToast();
@@ -381,12 +251,6 @@ const AdminGames = () => {
     setEditData({
       ...g,
       active: getGameActiveValue(g),
-      leftNumberColor: g.leftNumberColor || "#000000",
-      leftNumberBgColor: g.leftNumberBgColor || "#f3f4f6",
-      centerNumberColor: g.centerNumberColor || "#000000",
-      centerNumberBgColor: g.centerNumberBgColor || CENTER_BG_COLOR,
-      rightNumberColor: g.rightNumberColor || "#000000",
-      rightNumberBgColor: g.rightNumberBgColor || "#f3f4f6",
     });
   };
 
@@ -470,12 +334,6 @@ const AdminGames = () => {
         openTime: editData.openTime,
         closeTime: editData.closeTime,
         active: getGameActiveValue(editData),
-        leftNumberColor: editData.leftNumberColor,
-        leftNumberBgColor: editData.leftNumberBgColor,
-        centerNumberColor: editData.centerNumberColor,
-        centerNumberBgColor: editData.centerNumberBgColor,
-        rightNumberColor: editData.rightNumberColor,
-        rightNumberBgColor: editData.rightNumberBgColor,
       });
 
       await loadGames(true);
@@ -566,12 +424,6 @@ const AdminGames = () => {
         openTime: newGame.openTime || "00:00",
         closeTime: newGame.closeTime || "00:00",
         active: true,
-        leftNumberColor: newGame.leftNumberColor || "#000000",
-        leftNumberBgColor: newGame.leftNumberBgColor || "#f3f4f6",
-        centerNumberColor: newGame.centerNumberColor || "#000000",
-        centerNumberBgColor: newGame.centerNumberBgColor || CENTER_BG_COLOR,
-        rightNumberColor: newGame.rightNumberColor || "#000000",
-        rightNumberBgColor: newGame.rightNumberBgColor || "#f3f4f6",
       });
 
       await loadGames(true);
@@ -584,12 +436,6 @@ const AdminGames = () => {
         openTime: "00:00",
         closeTime: "00:00",
         active: true,
-        leftNumberColor: "#000000",
-        leftNumberBgColor: "#f3f4f6",
-        centerNumberColor: "#000000",
-        centerNumberBgColor: CENTER_BG_COLOR,
-        rightNumberColor: "#000000",
-        rightNumberBgColor: "#f3f4f6",
       });
 
       setShowAddForm(false);
@@ -735,12 +581,6 @@ const AdminGames = () => {
                   openTime: "00:00",
                   closeTime: "00:00",
                   active: true,
-                  leftNumberColor: "#000000",
-                  leftNumberBgColor: "#f3f4f6",
-                  centerNumberColor: "#000000",
-                  centerNumberBgColor: CENTER_BG_COLOR,
-                  rightNumberColor: "#000000",
-                  rightNumberBgColor: "#f3f4f6",
                 });
               }
             }}
@@ -817,93 +657,6 @@ const AdminGames = () => {
                   maxLength={3}
                   className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl"
                 />
-              </div>
-            </div>
-
-            {/* Color Pickers for Add Form */}
-            <div className="border-t border-gray-200 pt-4">
-              <label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-3 flex items-center gap-2">
-                <Palette className="w-4 h-4" />
-                CUSTOMIZE COLORS (Text & Background)
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Left Number Colors */}
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-mono font-bold text-gray-700 mb-2">Left Number</p>
-                  <div className="flex gap-2 mb-2 items-end">
-                    <TextColorPicker
-                      value={newGame.leftNumberColor || "#000000"}
-                      onChange={(color) => setNewGame({ ...newGame, leftNumberColor: color })}
-                      label="Text"
-                    />
-                    <BackgroundColorPicker
-                      value={newGame.leftNumberBgColor || "#f3f4f6"}
-                      onChange={(color) => setNewGame({ ...newGame, leftNumberBgColor: color })}
-                      label="BG"
-                    />
-                  </div>
-                  <div 
-                    className="mt-2 p-2 rounded-lg text-center text-sm font-mono font-bold transition-all"
-                    style={{ 
-                      backgroundColor: newGame.leftNumberBgColor || "#f3f4f6",
-                      color: newGame.leftNumberColor || "#000000"
-                    }}
-                  >
-                    Preview: {newGame.leftNumber || "***"}
-                  </div>
-                </div>
-
-                {/* Center Number Colors */}
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-mono font-bold text-gray-700 mb-2">Center Number</p>
-                  <div className="flex gap-2 mb-2 items-end">
-                    <TextColorPicker
-                      value={newGame.centerNumberColor || "#000000"}
-                      onChange={(color) => setNewGame({ ...newGame, centerNumberColor: color })}
-                      label="Text"
-                    />
-                    <BackgroundColorPicker
-                      value={newGame.centerNumberBgColor || CENTER_BG_COLOR}
-                      onChange={(color) => setNewGame({ ...newGame, centerNumberBgColor: color })}
-                      label="BG"
-                    />
-                  </div>
-                  <div 
-                    className="mt-2 p-2 rounded-lg text-center text-lg font-mono font-black transition-all"
-                    style={{ 
-                      backgroundColor: newGame.centerNumberBgColor || CENTER_BG_COLOR,
-                      color: newGame.centerNumberColor || "#000000"
-                    }}
-                  >
-                    Preview: {newGame.centerNumber || "*"}
-                  </div>
-                </div>
-
-                {/* Right Number Colors */}
-                <div className="p-3 bg-gray-50 rounded-xl">
-                  <p className="text-xs font-mono font-bold text-gray-700 mb-2">Right Number</p>
-                  <div className="flex gap-2 mb-2 items-end">
-                    <TextColorPicker
-                      value={newGame.rightNumberColor || "#000000"}
-                      onChange={(color) => setNewGame({ ...newGame, rightNumberColor: color })}
-                      label="Text"
-                    />
-                    <BackgroundColorPicker
-                      value={newGame.rightNumberBgColor || "#f3f4f6"}
-                      onChange={(color) => setNewGame({ ...newGame, rightNumberBgColor: color })}
-                      label="BG"
-                    />
-                  </div>
-                  <div 
-                    className="mt-2 p-2 rounded-lg text-center text-sm font-mono font-bold transition-all"
-                    style={{ 
-                      backgroundColor: newGame.rightNumberBgColor || "#f3f4f6",
-                      color: newGame.rightNumberColor || "#000000"
-                    }}
-                  >
-                    Preview: {newGame.rightNumber || "***"}
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -1014,90 +767,6 @@ const AdminGames = () => {
                       </div>
                     </div>
 
-                    {/* Color Pickers for Edit Form */}
-                    <div className="border-t border-gray-200 pt-4">
-                      <label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-3 flex items-center gap-2">
-                        <Palette className="w-4 h-4" />
-                        CUSTOMIZE COLORS
-                      </label>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="p-3 bg-gray-50 rounded-xl">
-                          <p className="text-xs font-mono font-bold text-gray-700 mb-2">Left Number</p>
-                          <div className="flex gap-2 mb-2 items-end">
-                            <TextColorPicker
-                              value={editData.leftNumberColor || "#000000"}
-                              onChange={(color) => setEditData({ ...editData, leftNumberColor: color })}
-                              label="Text"
-                            />
-                            <BackgroundColorPicker
-                              value={editData.leftNumberBgColor || "#f3f4f6"}
-                              onChange={(color) => setEditData({ ...editData, leftNumberBgColor: color })}
-                              label="BG"
-                            />
-                          </div>
-                          <div 
-                            className="p-2 rounded-lg text-center text-sm font-mono font-bold"
-                            style={{ 
-                              backgroundColor: editData.leftNumberBgColor || "#f3f4f6",
-                              color: editData.leftNumberColor || "#000000"
-                            }}
-                          >
-                            {editData.leftNumber}
-                          </div>
-                        </div>
-
-                        <div className="p-3 bg-gray-50 rounded-xl">
-                          <p className="text-xs font-mono font-bold text-gray-700 mb-2">Center Number</p>
-                          <div className="flex gap-2 mb-2 items-end">
-                            <TextColorPicker
-                              value={editData.centerNumberColor || "#000000"}
-                              onChange={(color) => setEditData({ ...editData, centerNumberColor: color })}
-                              label="Text"
-                            />
-                            <BackgroundColorPicker
-                              value={editData.centerNumberBgColor || CENTER_BG_COLOR}
-                              onChange={(color) => setEditData({ ...editData, centerNumberBgColor: color })}
-                              label="BG"
-                            />
-                          </div>
-                          <div 
-                            className="p-2 rounded-lg text-center text-lg font-mono font-black"
-                            style={{ 
-                              backgroundColor: editData.centerNumberBgColor || CENTER_BG_COLOR,
-                              color: editData.centerNumberColor || "#000000"
-                            }}
-                          >
-                            {editData.centerNumber}
-                          </div>
-                        </div>
-
-                        <div className="p-3 bg-gray-50 rounded-xl">
-                          <p className="text-xs font-mono font-bold text-gray-700 mb-2">Right Number</p>
-                          <div className="flex gap-2 mb-2 items-end">
-                            <TextColorPicker
-                              value={editData.rightNumberColor || "#000000"}
-                              onChange={(color) => setEditData({ ...editData, rightNumberColor: color })}
-                              label="Text"
-                            />
-                            <BackgroundColorPicker
-                              value={editData.rightNumberBgColor || "#f3f4f6"}
-                              onChange={(color) => setEditData({ ...editData, rightNumberBgColor: color })}
-                              label="BG"
-                            />
-                          </div>
-                          <div 
-                            className="p-2 rounded-lg text-center text-sm font-mono font-bold"
-                            style={{ 
-                              backgroundColor: editData.rightNumberBgColor || "#f3f4f6",
-                              color: editData.rightNumberColor || "#000000"
-                            }}
-                          >
-                            {editData.rightNumber}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-[10px] font-mono font-bold text-gray-600">Open Time</label>
@@ -1154,31 +823,13 @@ const AdminGames = () => {
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-sm">
                           <div className="flex items-center gap-2 rounded-lg">
-                            <span 
-                              className="text-xs font-mono font-bold px-3 py-1.5 rounded-lg transition-all"
-                              style={{ 
-                                backgroundColor: g.leftNumberBgColor || "#f3f4f6",
-                                color: g.leftNumberColor || "#000000"
-                              }}
-                            >
+                            <span className="text-xs font-mono font-bold px-3 py-1.5 bg-gray-100 rounded-lg">
                               {g.leftNumber}
                             </span>
-                            <span 
-                              className="text-lg font-mono font-black px-3 py-1.5 rounded-lg transition-all"
-                              style={{ 
-                                backgroundColor: g.centerNumberBgColor || (isSpecialDouble ? "#fee2e2" : "#f3f4f6"),
-                                color: g.centerNumberColor || (isSpecialDouble ? "#dc2626" : "#000000")
-                              }}
-                            >
+                            <span className={`text-lg font-mono font-black px-3 py-1.5 rounded-lg ${isSpecialDouble ? "bg-red-100 text-red-600" : "bg-gray-100"}`}>
                               {g.centerNumber}
                             </span>
-                            <span 
-                              className="text-xs font-mono font-bold px-3 py-1.5 rounded-lg transition-all"
-                              style={{ 
-                                backgroundColor: g.rightNumberBgColor || "#f3f4f6",
-                                color: g.rightNumberColor || "#000000"
-                              }}
-                            >
+                            <span className="text-xs font-mono font-bold px-3 py-1.5 bg-gray-100 rounded-lg">
                               {g.rightNumber}
                             </span>
                           </div>
