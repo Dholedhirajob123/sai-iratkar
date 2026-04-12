@@ -33,10 +33,15 @@ import {
   X,
   CheckCircle,
   AlertCircle,
+  Timer,
+  Lock,
+  Unlock,
+  Play,
+  StopCircle,
 } from "lucide-react";
 
 // Valid double-digit center numbers
-const VALID_DOUBLE_DIGIT_CENTER = ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20","01","02","03","04","05","06","07","08","09",
+const VALID_DOUBLE_DIGIT_CENTER: string[] = ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20","01","02","03","04","05","06","07","08","09",
   "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
   "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
   "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
@@ -46,9 +51,34 @@ const VALID_DOUBLE_DIGIT_CENTER = ["10", "11", "12", "13", "14", "15", "16", "17
   "81", "82", "83", "84", "85", "86", "87", "88", "89", "90",
   "91", "92", "93", "94", "95", "96", "97", "98", "99","00"];
 
+// Helper function to check if current time is after or equal to given time
+const isTimeReachedOrPassed = (timeStr: string): boolean => {
+  const now = new Date();
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  const timeDate = new Date();
+  timeDate.setHours(hours, minutes, 0, 0);
+  return now >= timeDate;
+};
+
+// Helper function to check if current time is before given time
+const isTimeBefore = (timeStr: string): boolean => {
+  return !isTimeReachedOrPassed(timeStr);
+};
+
+// Helper to check if string contains only numbers
+const isOnlyNumbers = (value: string): boolean => {
+  if (value === "***" || value === "*") return true;
+  return /^\d+$/.test(value);
+};
+
+// Helper to strip non-digit characters
+const stripNonDigits = (value: string): string => {
+  return value.replace(/[^0-9]/g, "");
+};
+
 // Valid Numbers List Component
 const ValidNumbersList = () => {
-  const [showList, setShowList] = useState(false);
+  const [showList, setShowList] = useState<boolean>(false);
 
   return (
     <div className="mb-4">
@@ -67,7 +97,7 @@ const ValidNumbersList = () => {
             Valid 3-digit numbers for left/right positions:
           </p>
           <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
-            {VALID_NUMBERS.map((num, index) => (
+            {VALID_NUMBERS.map((num: string, index: number) => (
               <span key={index} className="px-2 py-1 bg-white border border-gray-200 rounded-lg text-center text-xs font-mono font-semibold text-gray-700 hover:border-blue-300 hover:shadow-sm transition-all duration-200">
                 {num}
               </span>
@@ -81,12 +111,12 @@ const ValidNumbersList = () => {
 
 // Center Numbers List Component
 const CenterNumbersList = () => {
-  const [showList, setShowList] = useState(false);
-  const centerNumbers = getValidCenterNumbers();
+  const [showList, setShowList] = useState<boolean>(false);
+  const centerNumbers: string[] = getValidCenterNumbers();
 
-  const singleDigits = centerNumbers.filter((n) => n.length === 1 && n !== "*");
-  const doubleDigits = VALID_DOUBLE_DIGIT_CENTER;
-  const wildcard = centerNumbers.filter((n) => n === "*");
+  const singleDigits: string[] = centerNumbers.filter((n: string) => n.length === 1 && n !== "*");
+  const doubleDigits: string[] = VALID_DOUBLE_DIGIT_CENTER;
+  const wildcard: string[] = centerNumbers.filter((n: string) => n === "*");
 
   return (
     <div className="mb-4">
@@ -108,7 +138,7 @@ const CenterNumbersList = () => {
           <div className="mb-3">
             <p className="text-[8px] font-mono text-gray-500 mb-2">Single Digits (0-9):</p>
             <div className="grid grid-cols-10 gap-1.5">
-              {singleDigits.map((num, index) => (
+              {singleDigits.map((num: string, index: number) => (
                 <span key={index} className="px-2 py-1 bg-white border border-gray-200 rounded-lg text-center text-xs font-mono font-semibold text-gray-700">
                   {num}
                 </span>
@@ -119,7 +149,7 @@ const CenterNumbersList = () => {
           <div className="mb-3">
             <p className="text-[8px] font-mono text-gray-500 mb-2">Valid Double Digits:</p>
             <div className="grid grid-cols-6 gap-1.5">
-              {doubleDigits.map((num, index) => (
+              {doubleDigits.map((num: string, index: number) => (
                 <span key={index} className="px-2 py-1 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-lg text-center text-xs font-mono font-bold text-red-600">
                   {num}
                 </span>
@@ -131,7 +161,7 @@ const CenterNumbersList = () => {
           <div>
             <p className="text-[8px] font-mono text-gray-500 mb-2">Wildcard:</p>
             <div className="grid grid-cols-1 gap-1.5">
-              {wildcard.map((num, index) => (
+              {wildcard.map((num: string, index: number) => (
                 <span key={index} className="px-3 py-1 bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg text-center w-12 text-xs font-mono font-bold text-purple-700">
                   {num}
                 </span>
@@ -149,11 +179,12 @@ const AdminGames = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [editing, setEditing] = useState<number | null>(null);
   const [editData, setEditData] = useState<Game | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showAddForm, setShowAddForm] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [selectedFilter, setSelectedFilter] = useState<"all" | "active" | "inactive">("all");
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   const [newGame, setNewGame] = useState<Partial<Game>>({
     name: "",
@@ -167,18 +198,44 @@ const AdminGames = () => {
 
   const { toast } = useToast();
   
-  const initialLoadRef = useRef(false);
-  const isFetchingRef = useRef(false);
+  const initialLoadRef = useRef<boolean>(false);
+  const isFetchingRef = useRef<boolean>(false);
 
-  const getGameActiveValue = (game: Partial<Game>) => {
+  // Update current time every second for real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getGameActiveValue = (game: Game): boolean => {
     return typeof game.active === "boolean"
       ? game.active
-      : typeof (game as any).isActive === "boolean"
-      ? (game as any).isActive
       : false;
   };
 
-  const loadGames = useCallback(async (showRefreshToast = false) => {
+  // Check if open time has been reached (can declare after this time)
+  const isOpenTimeReached = (openTime: string): boolean => {
+    return isTimeReachedOrPassed(openTime);
+  };
+
+  // Check if close time has been reached (can declare after this time)
+  const isCloseTimeReached = (closeTime: string): boolean => {
+    return isTimeReachedOrPassed(closeTime);
+  };
+
+  // Check if can declare open number (only after open time)
+  const canDeclareOpenNumber = (openTime: string): boolean => {
+    return isTimeReachedOrPassed(openTime);
+  };
+
+  // Check if can declare close number (only after close time)
+  const canDeclareCloseNumber = (closeTime: string): boolean => {
+    return isTimeReachedOrPassed(closeTime);
+  };
+
+  const loadGames = useCallback(async (showRefreshToast: boolean = false) => {
     if (isFetchingRef.current) {
       return;
     }
@@ -236,7 +293,7 @@ const AdminGames = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const validateCenterNumberWithColor = (centerNum: string) => {
+  const validateCenterNumber = (centerNum: string): { isValid: boolean; isSpecialDouble: boolean } => {
     if (centerNum.length === 2) {
       if (VALID_DOUBLE_DIGIT_CENTER.includes(centerNum)) {
         return { isValid: true, isSpecialDouble: true };
@@ -295,6 +352,26 @@ const AdminGames = () => {
   const saveEdit = async () => {
     if (!editData) return;
 
+    // Check if can declare open number (only after open time)
+    if (editData.leftNumber !== "***" && !canDeclareOpenNumber(editData.openTime)) {
+      toast({
+        title: "Cannot Declare Open Number Yet",
+        description: `Open number can only be declared after ${editData.openTime}. Current time: ${currentTime.toLocaleTimeString()}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if can declare close number (only after close time)
+    if (editData.rightNumber !== "***" && !canDeclareCloseNumber(editData.closeTime)) {
+      toast({
+        title: "Cannot Declare Close Number Yet",
+        description: `Close number can only be declared after ${editData.closeTime}. Current time: ${currentTime.toLocaleTimeString()}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!isValidGameNumber(editData.leftNumber, "left") && editData.leftNumber !== "***") {
       const errorMsg = getValidationErrorMessage(editData.leftNumber, "left");
       toast({
@@ -305,7 +382,7 @@ const AdminGames = () => {
       return;
     }
 
-    const centerValidation = validateCenterNumberWithColor(editData.centerNumber);
+    const centerValidation = validateCenterNumber(editData.centerNumber);
     if (!centerValidation.isValid && editData.centerNumber !== "*") {
       toast({
         title: "Invalid Center Number",
@@ -395,7 +472,7 @@ const AdminGames = () => {
       return;
     }
 
-    const centerValidation = validateCenterNumberWithColor(newGame.centerNumber || "*");
+    const centerValidation = validateCenterNumber(newGame.centerNumber || "*");
     if (!centerValidation.isValid && newGame.centerNumber !== "*") {
       toast({
         title: "Invalid Center Number",
@@ -495,6 +572,19 @@ const AdminGames = () => {
 
   return (
     <div className="space-y-6">
+      {/* Current Time Display */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Timer className="w-5 h-5 text-blue-600" />
+            <span className="text-sm font-mono font-semibold text-gray-700">Current Server Time:</span>
+          </div>
+          <span className="text-sm font-mono font-bold text-blue-600">
+            {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+          </span>
+        </div>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg">
@@ -551,7 +641,7 @@ const AdminGames = () => {
           <div className="flex items-center gap-3">
             <select
               value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value as any)}
+              onChange={(e) => setSelectedFilter(e.target.value as "all" | "active" | "inactive")}
               className="bg-gray-50 border-2 border-gray-200 px-5 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-xl cursor-pointer hover:bg-gray-100 transition-all duration-200"
             >
               <option value="all">All Games</option>
@@ -625,12 +715,16 @@ const AdminGames = () => {
                   LEFT NUMBER
                 </label>
                 <input
-                  value={newGame.leftNumber}
-                  onChange={(e) => setNewGame({ ...newGame, leftNumber: e.target.value })}
+                  value={newGame.leftNumber === "***" ? "" : newGame.leftNumber}
+                  onChange={(e) => {
+                    const cleaned = stripNonDigits(e.target.value);
+                    setNewGame({ ...newGame, leftNumber: cleaned || "***" });
+                  }}
                   placeholder="Left (e.g., 128)"
                   maxLength={3}
                   className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl"
                 />
+                <p className="text-[8px] font-mono text-gray-400 mt-1">Numbers only (0-9)</p>
               </div>
 
               <div>
@@ -638,12 +732,16 @@ const AdminGames = () => {
                   CENTER NUMBER
                 </label>
                 <input
-                  value={newGame.centerNumber}
-                  onChange={(e) => setNewGame({ ...newGame, centerNumber: e.target.value })}
+                  value={newGame.centerNumber === "*" ? "" : newGame.centerNumber}
+                  onChange={(e) => {
+                    const cleaned = stripNonDigits(e.target.value);
+                    setNewGame({ ...newGame, centerNumber: cleaned || "*" });
+                  }}
                   placeholder="Center (0-9, or specific double digits)"
                   maxLength={2}
                   className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl"
                 />
+                <p className="text-[8px] font-mono text-gray-400 mt-1">Numbers only (0-9)</p>
               </div>
 
               <div>
@@ -651,20 +749,24 @@ const AdminGames = () => {
                   RIGHT NUMBER
                 </label>
                 <input
-                  value={newGame.rightNumber}
-                  onChange={(e) => setNewGame({ ...newGame, rightNumber: e.target.value })}
+                  value={newGame.rightNumber === "***" ? "" : newGame.rightNumber}
+                  onChange={(e) => {
+                    const cleaned = stripNonDigits(e.target.value);
+                    setNewGame({ ...newGame, rightNumber: cleaned || "***" });
+                  }}
                   placeholder="Right (e.g., 129)"
                   maxLength={3}
                   className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl"
                 />
+                <p className="text-[8px] font-mono text-gray-400 mt-1">Numbers only (0-9)</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  OPEN TIME
+                  <Play className="w-3 h-3" />
+                  OPEN TIME (When number can be declared)
                 </label>
                 <input
                   type="time"
@@ -675,8 +777,8 @@ const AdminGames = () => {
               </div>
               <div>
                 <label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  CLOSE TIME
+                  <StopCircle className="w-3 h-3" />
+                  CLOSE TIME (When number can be declared)
                 </label>
                 <input
                   type="time"
@@ -718,6 +820,8 @@ const AdminGames = () => {
           filteredGames.map((g, index) => {
             const isActive = getGameActiveValue(g);
             const isSpecialDouble = VALID_DOUBLE_DIGIT_CENTER.includes(g.centerNumber);
+            const openTimeReached = isOpenTimeReached(g.openTime);
+            const closeTimeReached = isCloseTimeReached(g.closeTime);
 
             return (
               <div key={g.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
@@ -732,14 +836,39 @@ const AdminGames = () => {
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <label className="text-[10px] font-mono font-bold text-gray-600">Left Number</label>
-                          <button onClick={resetLeftNumber} className="text-[8px] font-mono text-blue-600">Reset</button>
+                          {!openTimeReached && editData.leftNumber !== "***" && (
+                            <span className="text-[8px] font-mono text-orange-500 flex items-center gap-0.5">
+                              <Timer className="w-2.5 h-2.5" /> Wait until {editData.openTime}
+                            </span>
+                          )}
+                          {openTimeReached && (
+                            <button onClick={resetLeftNumber} className="text-[8px] font-mono text-blue-600">Reset</button>
+                          )}
                         </div>
                         <input
-                          value={editData.leftNumber}
+                          value={editData.leftNumber === "***" ? "" : editData.leftNumber}
                           maxLength={3}
-                          onChange={(e) => setEditData({ ...editData, leftNumber: e.target.value })}
-                          className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg"
+                          onChange={(e) => {
+                            const cleaned = stripNonDigits(e.target.value);
+                            setEditData({ ...editData, leftNumber: cleaned || "***" });
+                          }}
+                          disabled={!openTimeReached}
+                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${
+                            !openTimeReached && editData.leftNumber !== "***"
+                              ? "border-orange-200 bg-orange-50 text-gray-500 cursor-not-allowed" 
+                              : "border-gray-200"
+                          }`}
                         />
+                        {!openTimeReached && editData.leftNumber !== "***" && (
+                          <p className="text-[8px] font-mono text-orange-500 mt-1">
+                            Can declare only after {editData.openTime}
+                          </p>
+                        )}
+                        {openTimeReached && editData.leftNumber === "***" && (
+                          <p className="text-[8px] font-mono text-green-600 mt-1">
+                            Ready to declare open number
+                          </p>
+                        )}
                       </div>
                       <div>
                         <div className="flex items-center justify-between mb-2">
@@ -747,23 +876,51 @@ const AdminGames = () => {
                           <button onClick={resetCenterNumber} className="text-[8px] font-mono text-blue-600">Reset</button>
                         </div>
                         <input
-                          value={editData.centerNumber}
+                          value={editData.centerNumber === "*" ? "" : editData.centerNumber}
                           maxLength={2}
-                          onChange={(e) => setEditData({ ...editData, centerNumber: e.target.value })}
+                          onChange={(e) => {
+                            const cleaned = stripNonDigits(e.target.value);
+                            setEditData({ ...editData, centerNumber: cleaned || "*" });
+                          }}
                           className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg"
                         />
                       </div>
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="text-[10px] font-mono font-bold text-gray-600">Right</label>
-                          <button onClick={resetRightNumber} className="text-[8px] font-mono text-blue-600">Reset</button>
+                          <label className="text-[10px] font-mono font-bold text-gray-600">Right Number</label>
+                          {!closeTimeReached && editData.rightNumber !== "***" && (
+                            <span className="text-[8px] font-mono text-orange-500 flex items-center gap-0.5">
+                              <Timer className="w-2.5 h-2.5" /> Wait until {editData.closeTime}
+                            </span>
+                          )}
+                          {closeTimeReached && (
+                            <button onClick={resetRightNumber} className="text-[8px] font-mono text-blue-600">Reset</button>
+                          )}
                         </div>
                         <input
-                          value={editData.rightNumber}
+                          value={editData.rightNumber === "***" ? "" : editData.rightNumber}
                           maxLength={3}
-                          onChange={(e) => setEditData({ ...editData, rightNumber: e.target.value })}
-                          className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg"
+                          onChange={(e) => {
+                            const cleaned = stripNonDigits(e.target.value);
+                            setEditData({ ...editData, rightNumber: cleaned || "***" });
+                          }}
+                          disabled={!closeTimeReached}
+                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${
+                            !closeTimeReached && editData.rightNumber !== "***"
+                              ? "border-orange-200 bg-orange-50 text-gray-500 cursor-not-allowed" 
+                              : "border-gray-200"
+                          }`}
                         />
+                        {!closeTimeReached && editData.rightNumber !== "***" && (
+                          <p className="text-[8px] font-mono text-orange-500 mt-1">
+                            Can declare only after {editData.closeTime}
+                          </p>
+                        )}
+                        {closeTimeReached && editData.rightNumber === "***" && (
+                          <p className="text-[8px] font-mono text-green-600 mt-1">
+                            Ready to declare close number
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -787,7 +944,15 @@ const AdminGames = () => {
                         />
                       </div>
                     </div>
+                    
+                    {/* Button Order: Cancel (Left), Reset (Middle), Save (Right) */}
                     <div className="flex gap-3">
+                      <button
+                        onClick={cancelEdit}
+                        className="flex-1 flex items-center justify-center gap-1.5 border-2 border-gray-300 text-gray-600 py-2.5 font-mono text-xs font-bold rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all"
+                      >
+                        <Undo2 className="w-3.5 h-3.5" /> Cancel
+                      </button>
                       <button
                         onClick={resetAllNumbers}
                         className="flex-1 flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 font-mono text-xs font-bold rounded-lg transition-all border border-gray-300"
@@ -799,12 +964,6 @@ const AdminGames = () => {
                         className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white py-2.5 font-mono text-xs font-bold rounded-lg transition-all"
                       >
                         <Save className="w-3.5 h-3.5" /> Save
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="flex-1 flex items-center justify-center gap-1.5 border-2 border-gray-300 text-gray-600 py-2.5 font-mono text-xs font-bold rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all"
-                      >
-                        <Undo2 className="w-3.5 h-3.5" /> Cancel
                       </button>
                     </div>
                   </div>
@@ -820,16 +979,36 @@ const AdminGames = () => {
                           <span className={`px-2.5 py-1 rounded-full text-[9px] font-mono font-bold ${isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
                             {isActive ? "● Active" : "● Inactive"}
                           </span>
+                          {!openTimeReached && g.leftNumber !== "***" && (
+                            <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-orange-100 text-orange-700 flex items-center gap-1">
+                              <Timer className="w-2.5 h-2.5" /> Open at {g.openTime}
+                            </span>
+                          )}
+                          {!closeTimeReached && g.rightNumber !== "***" && (
+                            <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-orange-100 text-orange-700 flex items-center gap-1">
+                              <Timer className="w-2.5 h-2.5" /> Close at {g.closeTime}
+                            </span>
+                          )}
+                          {openTimeReached && g.leftNumber === "***" && (
+                            <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-green-100 text-green-700 flex items-center gap-1">
+                              <Play className="w-2.5 h-2.5" /> Ready to Declare Open
+                            </span>
+                          )}
+                          {closeTimeReached && g.rightNumber === "***" && (
+                            <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-green-100 text-green-700 flex items-center gap-1">
+                              <StopCircle className="w-2.5 h-2.5" /> Ready to Declare Close
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-sm">
                           <div className="flex items-center gap-2 rounded-lg">
-                            <span className="text-xs font-mono font-bold px-3 py-1.5 bg-gray-100 rounded-lg">
+                            <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg ${!openTimeReached && g.leftNumber !== "***" ? "bg-orange-100 text-orange-600" : openTimeReached && g.leftNumber === "***" ? "bg-green-100 text-green-600 animate-pulse" : "bg-gray-100"}`}>
                               {g.leftNumber}
                             </span>
                             <span className={`text-lg font-mono font-black px-3 py-1.5 rounded-lg ${isSpecialDouble ? "bg-red-100 text-red-600" : "bg-gray-100"}`}>
                               {g.centerNumber}
                             </span>
-                            <span className="text-xs font-mono font-bold px-3 py-1.5 bg-gray-100 rounded-lg">
+                            <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg ${!closeTimeReached && g.rightNumber !== "***" ? "bg-orange-100 text-orange-600" : closeTimeReached && g.rightNumber === "***" ? "bg-green-100 text-green-600 animate-pulse" : "bg-gray-100"}`}>
                               {g.rightNumber}
                             </span>
                           </div>

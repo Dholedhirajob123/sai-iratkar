@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 type GameStatus = "open" | "timeout";
 
-// Extended Game interface with color properties
+// Extended Game interface
 interface ExtendedGame extends Game {
   leftNumberColor?: string;
   centerNumberColor?: string;
@@ -13,6 +13,12 @@ interface ExtendedGame extends Game {
   centerNumberBgColor?: string;
   rightNumberBgColor?: string;
 }
+
+// Special double-digit numbers that should be shown in red
+const SPECIAL_RED_NUMBERS = [
+  "11", "22", "33", "44", "55", "66", "77", "88", "99", "00",
+  "05","16","27","38","49","50","61","72","83","94"
+];
 
 const getTodayDateTime = (time: string): Date => {
   const now = new Date();
@@ -49,6 +55,11 @@ const formatTime = (time: string) => {
     .padStart(2, "0")} ${ampm}`;
 };
 
+// Helper function to check if a number is a special red number
+const isSpecialRedNumber = (number: string): boolean => {
+  return SPECIAL_RED_NUMBERS.includes(number);
+};
+
 interface GameCardProps {
   game: ExtendedGame;
   onPlayOpen?: (game: ExtendedGame) => void;
@@ -60,13 +71,46 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
   const { openStatus, closeStatus } = getGameStatus(game.openTime, game.closeTime);
   const isActive = game.isActive === true || game.active === true;
 
-  // Get colors from game object with fallbacks
-  const leftTextColor = game.leftNumberColor || "#000000";
-  const leftBgColor = game.leftNumberBgColor || "#f3f4f6";
-  const centerTextColor = game.centerNumberColor || "#000000";
-  const centerBgColor = game.centerNumberBgColor || "#fde68a";
-  const rightTextColor = game.rightNumberColor || "#000000";
-  const rightBgColor = game.rightNumberBgColor || "#f3f4f6";
+  // Check if center number is special (should be red)
+  const isSpecial = isSpecialRedNumber(game.centerNumber);
+  
+  // For Left Number - Use admin color if available, otherwise default
+  // If center is special, also make left number red
+  let leftTextColor = game.leftNumberColor || "#000000";
+  let leftBgColor = game.leftNumberBgColor || "#f3f4f6";
+  
+  // If center is special red number, override left number colors with red
+  if (isSpecial) {
+    leftTextColor = "#dc2626"; // Red text
+    if (!game.leftNumberBgColor) {
+      leftBgColor = "#fee2e2"; // Light red background
+    }
+  }
+  
+  // For Center Number - If special, override with red, otherwise use admin colors
+  let centerTextColor = game.centerNumberColor || "#000000";
+  let centerBgColor = game.centerNumberBgColor || "#f3f4f6";
+  
+  // If special red number, override with red colors
+  if (isSpecial) {
+    centerTextColor = "#dc2626"; // Red text
+    if (!game.centerNumberBgColor) {
+      centerBgColor = "#fee2e2"; // Light red background
+    }
+  }
+  
+  // For Right Number - Use admin color if available, otherwise default
+  // If center is special, also make right number red
+  let rightTextColor = game.rightNumberColor || "#000000";
+  let rightBgColor = game.rightNumberBgColor || "#f3f4f6";
+  
+  // If center is special red number, override right number colors with red
+  if (isSpecial) {
+    rightTextColor = "#dc2626"; // Red text
+    if (!game.rightNumberBgColor) {
+      rightBgColor = "#fee2e2"; // Light red background
+    }
+  }
 
   const handlePlayOpen = () => {
     if (onPlayOpen) {
@@ -148,38 +192,46 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
         !isActive ? "opacity-60" : ""
       }`}
     >
-      {/* HEADER with Game Badge */}
-      <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 border-b border-black-200 px-5 py-4">
-        <h3 className="text-center font-mono font-bold text-base text-white tracking-wider flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 px-5 py-2 rounded-xl shadow-md">
+      {/* HEADER with Game Badge - No change, always yellow/orange */}
+      <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 px-5 py-4">
+        <h3 className="text-center font-mono font-bold text-base text-gray-900 tracking-wider flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 px-5 py-2 rounded-xl shadow-md text-white">
           {game.name}
         </h3>
       </div>
 
-      {/* NUMBERS with Admin Custom Colors */}
+      {/* NUMBERS - All three numbers turn red when center is special */}
       <div className="flex items-center justify-center gap-6 py-8 px-4 bg-white">
+        {/* Left Number */}
         <span
           className="text-3xl font-mono font-bold px-4 py-2 rounded-xl transition-all duration-200"
           style={{
             backgroundColor: leftBgColor,
-            color: leftTextColor
+            color: leftTextColor,
+            ...(isSpecial && !game.leftNumberBgColor && { boxShadow: '0 0 5px rgba(220,38,38,0.2)' })
           }}
         >
           {game.leftNumber}
         </span>
+        
+        {/* Center Number */}
         <span
           className="text-4xl font-mono font-black px-4 py-2 rounded-xl transition-all duration-200"
           style={{
             backgroundColor: centerBgColor,
-            color: centerTextColor
+            color: centerTextColor,
+            ...(isSpecial && !game.centerNumberBgColor && { boxShadow: '0 0 10px rgba(220,38,38,0.4)' })
           }}
         >
           {game.centerNumber}
         </span>
+        
+        {/* Right Number */}
         <span
           className="text-3xl font-mono font-bold px-4 py-2 rounded-xl transition-all duration-200"
           style={{
             backgroundColor: rightBgColor,
-            color: rightTextColor
+            color: rightTextColor,
+            ...(isSpecial && !game.rightNumberBgColor && { boxShadow: '0 0 5px rgba(220,38,38,0.2)' })
           }}
         >
           {game.rightNumber}

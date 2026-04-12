@@ -390,7 +390,7 @@ const AdminHistory = () => {
       </div>
 
       {/* ========================= */}
-      {/* GAME HISTORY */}
+      {/* GAME HISTORY - NO RESULT COLUMN */}
       {/* ========================= */}
       {activeTab === "entries" && (
         <>
@@ -454,7 +454,6 @@ const AdminHistory = () => {
                               <th className="text-xs font-mono font-bold text-gray-700 py-3 px-3">Game</th>
                               <th className="text-xs font-mono font-bold text-gray-700 py-3 px-3">Type</th>
                               <th className="text-xs font-mono font-bold text-gray-700 py-3 px-3">Amount</th>
-                              <th className="text-xs font-mono font-bold text-gray-700 py-3 px-3">Result</th>
                               <th className="text-xs font-mono font-bold text-gray-700 py-3 px-3">Date</th>
                             </tr>
                           </thead>
@@ -484,23 +483,6 @@ const AdminHistory = () => {
                                   </span>
                                 </td>
                                 <td className="py-3 px-3 text-xs font-mono font-bold text-gray-900">₹{e.amount}</td>
-                                <td className="py-3 px-3">
-                                  {e.result ? (
-                                    e.result === "won" ? (
-                                      <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-full bg-green-100 text-green-700">
-                                        +₹{e.winAmount}
-                                      </span>
-                                    ) : (
-                                      <span className="text-[10px] font-mono font-bold px-2 py-1 rounded-full bg-red-100 text-red-700">
-                                        LOST
-                                      </span>
-                                    )
-                                  ) : (
-                                    <span className="text-[10px] font-mono font-semibold px-2 py-1 rounded-full bg-yellow-100 text-yellow-700">
-                                      Pending
-                                    </span>
-                                  )}
-                                </td>
                                 <td className="py-3 px-3">
                                   <div className="flex items-center gap-1">
                                     <Calendar className="w-3 h-3 text-gray-400" />

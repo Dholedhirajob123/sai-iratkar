@@ -313,26 +313,10 @@ const AdminResults = () => {
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 p-2 rounded-xl">
-                      <Calendar className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-mono font-bold text-gray-500">DATE</p>
-                      <p className="text-sm font-mono font-black text-gray-900">{formatDate(date)}</p>
-                    </div>
+                  
+              
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-[9px] font-mono text-gray-500">Results</p>
-                      <p className="text-sm font-mono font-bold text-blue-600">{dateResults.length}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[9px] font-mono text-gray-500">Total Payout</p>
-                      <p className="text-sm font-mono font-bold text-green-600">
-                        ₹{dateResults.reduce((sum, r) => sum + (r.totalPayout || 0), 0).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
+                 
                 </div>
               </div>
 
