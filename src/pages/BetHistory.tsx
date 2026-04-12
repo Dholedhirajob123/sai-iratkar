@@ -63,6 +63,7 @@ const BetHistory = () => {
         e.playerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.gameName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.gameType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.playType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.number?.includes(searchQuery)
       );
     }
@@ -154,6 +155,7 @@ const BetHistory = () => {
                     <span className="text-xs px-2 py-0.5 bg-gray-100 rounded text-gray-600">
                       {e.gameType}
                     </span>
+                    <span className="text-sm font-semibold text-gray-900">{e.playType}</span>
                   </div>
 
                   {/* Number */}
