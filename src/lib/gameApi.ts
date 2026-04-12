@@ -231,7 +231,7 @@ export const getCurrentUser = async (token: string): Promise<User> => {
 
 export const getGames = async (): Promise<Game[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/games`, {
+    const response = await fetchWithTimeout(`${BASE_URL}/public/games`, {
       headers: getHeaders(),
     });
     const games = await handleResponse(response);
@@ -262,12 +262,15 @@ export const getGames = async (): Promise<Game[]> => {
 
 export const getActiveGames = async (): Promise<Game[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/games/active`, {
-      headers: getHeaders(),
-    });
+    const response = await fetchWithTimeout(
+      `${BASE_URL}/public/games/active`,
+      {
+        headers: getHeaders(),
+      }
+    );
+
     const games = await handleResponse(response);
-    
-    // Ensure all games have color properties with defaults
+
     const gamesWithColors = games.map((game: Game) => ({
       ...game,
       leftNumberColor: game.leftNumberColor || "#000000",
@@ -277,21 +280,17 @@ export const getActiveGames = async (): Promise<Game[]> => {
       rightNumberColor: game.rightNumberColor || "#000000",
       rightNumberBgColor: game.rightNumberBgColor || "#f3f4f6",
     }));
-    
+
     return gamesWithColors;
   } catch (error) {
-    console.error('Failed to fetch active games:', error);
-    const cachedGames = getCachedData(CACHE_KEYS.GAMES);
-    if (cachedGames) {
-      return cachedGames.filter((game: Game) => game.isActive || game.active);
-    }
+    console.error("Failed to fetch active games:", error);
     return [];
   }
 };
 
 export const getGameById = async (id: number): Promise<Game> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/games/${id}`, {
+    const response = await fetchWithTimeout(`${BASE_URL}/public/games/${id}`, {
       headers: getHeaders(),
     });
     const game = await handleResponse(response);
@@ -401,7 +400,7 @@ export const toggleGameStatus = async (id: number): Promise<Game> => {
 export const searchGames = async (name: string): Promise<Game[]> => {
   try {
     const response = await fetchWithTimeout(
-      `${BASE_URL}/games/search?name=${encodeURIComponent(name)}`,
+      `${BASE_URL}/public/games/search?name=${encodeURIComponent(name)}`,
       { headers: getHeaders() }
     );
     const games = await handleResponse(response);
@@ -608,7 +607,7 @@ export const declareResult = async (
 
 export const getResults = async (): Promise<GameResult[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/game-results`, {
+    const response = await fetchWithTimeout(`${BASE_URL}/public/game-results`, {
       headers: getHeaders(),
     });
     const results = await handleResponse(response);
@@ -623,7 +622,7 @@ export const getResults = async (): Promise<GameResult[]> => {
 
 export const getResultById = async (resultId: number): Promise<GameResult> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/game-results/${resultId}`, {
+    const response = await fetchWithTimeout(`${BASE_URL}/public/game-results/${resultId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -642,7 +641,7 @@ export const getResultsByGameId = async (
   gameId: number
 ): Promise<GameResult[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/game-results/game/${gameId}`, {
+    const response = await fetchWithTimeout(`${BASE_URL}/public/game-results/game/${gameId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);

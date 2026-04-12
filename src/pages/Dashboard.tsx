@@ -26,7 +26,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import {
-  getGames,
+  getActiveGames,
   addBulkGameEntries,
   Game,
   GameEntry,
@@ -44,6 +44,8 @@ interface ExtendedGame extends Game {
   leftNumberBgColor?: string;
   centerNumberBgColor?: string;
   rightNumberBgColor?: string;
+  openRate?: number;
+  closeRate?: number;
 }
 
 const getTodayDateTime = (time: string): Date => {
@@ -103,7 +105,7 @@ const Dashboard = () => {
 const loadGames = useCallback(async () => {
   try {
     setGamesLoading(true);
-    const allGames = await getGames();
+    const allGames = await getActiveGames();
     // Pass colors exactly as from admin - preserve all color properties
     const gamesWithColors = allGames.map(game => ({
       ...game,
