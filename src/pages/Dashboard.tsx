@@ -23,7 +23,8 @@ import {
   Zap,
   Bell,
   Settings,
-  AlertCircle
+  AlertCircle,
+  Percent
 } from "lucide-react";
 import {
   getActiveGames,
@@ -87,6 +88,7 @@ const Dashboard = () => {
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [copied, setCopied] = useState(false);
   const [submittingBet, setSubmittingBet] = useState(false);
+  const [showGameRateModal, setShowGameRateModal] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -100,40 +102,34 @@ const Dashboard = () => {
     }
   }, [user, loading, navigate]);
 
-// In Dashboard.tsx, update the loadGames function to ensure colors are passed properly:
-
-const loadGames = useCallback(async () => {
-  try {
-    setGamesLoading(true);
-    const allGames = await getActiveGames();
-    // Pass colors exactly as from admin - preserve all color properties
-    const gamesWithColors = allGames.map(game => ({
-      ...game,
-      // Number colors
-      leftNumberColor: (game as ExtendedGame).leftNumberColor || "#000000",
-      centerNumberColor: (game as ExtendedGame).centerNumberColor || "#000000",
-      rightNumberColor: (game as ExtendedGame).rightNumberColor || "#000000",
-      // Background colors
-      leftNumberBgColor: (game as ExtendedGame).leftNumberBgColor || "#f3f4f6",
-      centerNumberBgColor: (game as ExtendedGame).centerNumberBgColor || "#fde68a",
-      rightNumberBgColor: (game as ExtendedGame).rightNumberBgColor || "#f3f4f6",
-      // Rates
-      openRate: (game as ExtendedGame).openRate || 95,
-      closeRate: (game as ExtendedGame).closeRate || 95,
-    }));
-    setGames(gamesWithColors || []);
-    setCurrentTime(new Date());
-  } catch (error) {
-    console.error("Failed to load games:", error);
-    toast({
-      title: "Error",
-      description: "Failed to load games.",
-      variant: "destructive",
-    });
-  } finally {
-    setGamesLoading(false);
-  }
-}, [toast]);
+  const loadGames = useCallback(async () => {
+    try {
+      setGamesLoading(true);
+      const allGames = await getActiveGames();
+      const gamesWithColors = allGames.map(game => ({
+        ...game,
+        leftNumberColor: (game as ExtendedGame).leftNumberColor || "#000000",
+        centerNumberColor: (game as ExtendedGame).centerNumberColor || "#000000",
+        rightNumberColor: (game as ExtendedGame).rightNumberColor || "#000000",
+        leftNumberBgColor: (game as ExtendedGame).leftNumberBgColor || "#f3f4f6",
+        centerNumberBgColor: (game as ExtendedGame).centerNumberBgColor || "#fde68a",
+        rightNumberBgColor: (game as ExtendedGame).rightNumberBgColor || "#f3f4f6",
+        openRate: (game as ExtendedGame).openRate || 95,
+        closeRate: (game as ExtendedGame).closeRate || 95,
+      }));
+      setGames(gamesWithColors || []);
+      setCurrentTime(new Date());
+    } catch (error) {
+      console.error("Failed to load games:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load games.",
+        variant: "destructive",
+      });
+    } finally {
+      setGamesLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
     if (user) {
@@ -310,6 +306,10 @@ const loadGames = useCallback(async () => {
 
   const activeGames = games.filter(g => g.isActive || g.active).length;
 
+  // Calculate average rates from games
+  const avgOpenRate = games.reduce((sum, g) => sum + (g.openRate || 95), 0) / (games.length || 1);
+  const avgCloseRate = games.reduce((sum, g) => sum + (g.closeRate || 95), 0) / (games.length || 1);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 pb-20">
       {/* Share Options Modal */}
@@ -366,6 +366,27 @@ const loadGames = useCallback(async () => {
                 <ChevronRight className="w-4 h-4 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             </div>
+          </div>
+        </>
+      )}
+
+      {/* Game Rate Modal */}
+      {showGameRateModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            onClick={() => setShowGameRateModal(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-50 shadow-2xl animate-slide-up max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2">
+              <h3 className="text-lg font-mono font-bold text-gray-900 flex items-center gap-2">
+                <Percent className="w-5 h-5 text-blue-600" />
+                Game Rates
+              </h3>
+          
+            </div>
+
+           
           </div>
         </>
       )}
@@ -432,6 +453,7 @@ const loadGames = useCallback(async () => {
             { icon: User, label: "Profile", action: () => setShowProfile(true), color: "purple", bg: "bg-purple-50", text: "text-purple-600" },
             { icon: Wallet, label: "Balance", path: "/wallet", color: "green", bg: "bg-green-50", text: "text-green-600", badge: `₹${user.balance}` },
             { icon: History, label: "History", path: "/history", color: "orange", bg: "bg-orange-50", text: "text-orange-600" },
+            { icon: Percent, label: "Game Rates", action: () => setShowGameRateModal(false), color: "indigo", bg: "bg-indigo-50", text: "text-indigo-600" },
             { icon: Share2, label: "Share", action: handleShare, color: "teal", bg: "bg-teal-50", text: "text-teal-600" },
           ].map((item, idx) => (
             <button
@@ -575,7 +597,12 @@ const loadGames = useCallback(async () => {
                 <div className="p-3 bg-white rounded-xl shadow-md">
                   <Award className="w-6 h-6 text-green-600" />
                 </div>
-               
+                <div className="flex-1">
+                  <p className="text-[10px] font-mono text-gray-500">Member Since</p>
+                  <p className="text-sm font-mono font-bold text-gray-900">
+                    {new Date().toLocaleDateString()}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -603,7 +630,7 @@ const loadGames = useCallback(async () => {
         </button>
       </div>
 
-      {/* Games List - Pass games with colors to GameCard */}
+      {/* Games List */}
       <div className="px-4 space-y-4 pb-24">
         {gamesLoading ? (
           <div className="flex flex-col items-center justify-center py-20">

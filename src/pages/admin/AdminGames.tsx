@@ -40,7 +40,6 @@ import {
   StopCircle,
 } from "lucide-react";
 
-// Valid double-digit center numbers (used only for validation of combined string)
 const VALID_DOUBLE_DIGIT_CENTER: string[] = ["10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20","01","02","03","04","05","06","07","08","09",
   "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
   "31", "32", "33", "34", "35", "36", "37", "38", "39", "40",
@@ -51,7 +50,6 @@ const VALID_DOUBLE_DIGIT_CENTER: string[] = ["10", "11", "12", "13", "14", "15",
   "81", "82", "83", "84", "85", "86", "87", "88", "89", "90",
   "91", "92", "93", "94", "95", "96", "97", "98", "99","00"];
 
-// Helper functions (unchanged)
 const isTimeReachedOrPassed = (timeStr: string): boolean => {
   const now = new Date();
   const [hours, minutes] = timeStr.split(":").map(Number);
@@ -60,24 +58,15 @@ const isTimeReachedOrPassed = (timeStr: string): boolean => {
   return now >= timeDate;
 };
 
-const isTimeBefore = (timeStr: string): boolean => !isTimeReachedOrPassed(timeStr);
-
-const isOnlyNumbers = (value: string): boolean => {
-  if (value === "***" || value === "*") return true;
-  return /^\d+$/.test(value);
-};
-
 const stripNonDigits = (value: string): string => value.replace(/[^0-9]/g, "");
 
-// ValidNumbersList and CenterNumbersList components unchanged
 const ValidNumbersList = () => { return null; };
 const CenterNumbersList = () => { return null; };
 
-// Main component
 const AdminGames = () => {
   const [games, setGames] = useState<Game[]>([]);
   const [editing, setEditing] = useState<number | null>(null);
-  const [editData, setEditData] = useState<any | null>(null); // extended type
+  const [editData, setEditData] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -88,8 +77,8 @@ const AdminGames = () => {
   const [newGame, setNewGame] = useState<any>({
     name: "",
     leftNumber: "***",
-    openCenter: "",    // first digit (single digit)
-    closeCenter: "",   // second digit (single digit, optional)
+    openCenter: "",
+    closeCenter: "",
     rightNumber: "***",
     openTime: "00:00",
     closeTime: "00:00",
@@ -109,10 +98,7 @@ const AdminGames = () => {
 
   const isOpenTimeReached = (openTime: string) => isTimeReachedOrPassed(openTime);
   const isCloseTimeReached = (closeTime: string) => isTimeReachedOrPassed(closeTime);
-  const canDeclareOpenNumber = (openTime: string) => isTimeReachedOrPassed(openTime);
-  const canDeclareCloseNumber = (closeTime: string) => isTimeReachedOrPassed(closeTime);
 
-  // Combine openCenter + closeCenter into a single centerNumber string
   const combineCenter = (open: string, close: string): string => {
     if (open === "*") return "*";
     if (!open) return "*";
@@ -120,7 +106,6 @@ const AdminGames = () => {
     return open;
   };
 
-  // Split centerNumber into openCenter and closeCenter
   const splitCenter = (center: string): { open: string; close: string } => {
     if (center === "*") return { open: "*", close: "" };
     if (!center) return { open: "", close: "" };
@@ -208,17 +193,28 @@ const AdminGames = () => {
   const saveEdit = async () => {
     if (!editData) return;
 
-    // Time checks (unchanged)
-    if (editData.leftNumber !== "***" && !canDeclareOpenNumber(editData.openTime)) {
+    const openTimeReached = isOpenTimeReached(editData.openTime);
+    const closeTimeReached = isCloseTimeReached(editData.closeTime);
+
+    // Time-based validation: only allow changes when time allows
+    if (editData.leftNumber !== "***" && !openTimeReached) {
       toast({ title: "Cannot Declare Open Number Yet", description: `Open number can only be declared after ${editData.openTime}.`, variant: "destructive" });
       return;
     }
-    if (editData.rightNumber !== "***" && !canDeclareCloseNumber(editData.closeTime)) {
+    if (editData.openCenter && !openTimeReached) {
+      toast({ title: "Cannot Set Open Center Yet", description: `Open center can only be set after ${editData.openTime}.`, variant: "destructive" });
+      return;
+    }
+    if (editData.closeCenter && !closeTimeReached) {
+      toast({ title: "Cannot Set Close Center Yet", description: `Close center can only be set after ${editData.closeTime}.`, variant: "destructive" });
+      return;
+    }
+    if (editData.rightNumber !== "***" && !closeTimeReached) {
       toast({ title: "Cannot Declare Close Number Yet", description: `Close number can only be declared after ${editData.closeTime}.`, variant: "destructive" });
       return;
     }
 
-    // Validate left and right numbers
+    // Validate left and right numbers if they are not default
     if (!isValidGameNumber(editData.leftNumber, "left") && editData.leftNumber !== "***") {
       toast({ title: "Invalid Left Number", description: getValidationErrorMessage(editData.leftNumber, "left") || "Invalid left number.", variant: "destructive" });
       return;
@@ -228,9 +224,8 @@ const AdminGames = () => {
       return;
     }
 
-    // Validate combined center
-    const centerValidation = validateCenterCombination(editData.openCenter, editData.closeCenter);
-    if (!centerValidation.isValid) {
+    // Validate center combination (only if at least one digit is provided)
+    if ((editData.openCenter || editData.closeCenter) && !validateCenterCombination(editData.openCenter, editData.closeCenter).isValid) {
       toast({ title: "Invalid Center Number", description: `Open Center must be a single digit (0-9) and Close Center a single digit (0-9) forming a valid double digit or single digit.`, variant: "destructive" });
       return;
     }
@@ -241,7 +236,7 @@ const AdminGames = () => {
       await updateGame(editData.id, {
         name: editData.name.trim(),
         leftNumber: editData.leftNumber,
-        centerNumber: combinedCenter,   // send combined string
+        centerNumber: combinedCenter,
         rightNumber: editData.rightNumber,
         openTime: editData.openTime,
         closeTime: editData.closeTime,
@@ -281,7 +276,7 @@ const AdminGames = () => {
       return;
     }
     const centerValidation = validateCenterCombination(newGame.openCenter, newGame.closeCenter);
-    if (!centerValidation.isValid) {
+    if (!centerValidation.isValid && (newGame.openCenter || newGame.closeCenter)) {
       toast({ title: "Invalid Center Number", description: `Open Center must be a single digit (0-9) and Close Center a single digit (0-9) forming a valid double digit or single digit.`, variant: "destructive" });
       return;
     }
@@ -350,7 +345,6 @@ const AdminGames = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Total, Active, Inactive cards (unchanged) */}
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div><p className="text-xs font-mono opacity-80">Total Games</p><p className="text-3xl font-mono font-black mt-1">{stats.total}</p></div>
@@ -371,7 +365,7 @@ const AdminGames = () => {
         </div>
       </div>
 
-      {/* Search and Filter Bar (unchanged) */}
+      {/* Search and Filter Bar */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
@@ -395,7 +389,7 @@ const AdminGames = () => {
       <ValidNumbersList />
       <CenterNumbersList />
 
-      {/* Add Game Form */}
+      {/* Add Game Form (unchanged) */}
       {showAddForm && (
         <div className="bg-white rounded-2xl shadow-lg border-2 border-blue-200 p-6 animate-fadeIn">
           <div className="flex items-center gap-3 mb-6">
@@ -422,7 +416,7 @@ const AdminGames = () => {
       {/* Games List */}
       <div className="space-y-3">
         {filteredGames.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">...</div>
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">No games found</div>
         ) : (
           filteredGames.map((g, index) => {
             const isActive = getGameActiveValue(g);
@@ -447,12 +441,14 @@ const AdminGames = () => {
                       {/* Open Center */}
                       <div>
                         <div className="flex items-center justify-between mb-2"><label className="text-[10px] font-mono font-bold text-gray-600">Open Center</label><button onClick={resetOpenCenter} className="text-[8px] font-mono text-blue-600">Reset</button></div>
-                        <input value={editData.openCenter} maxLength={1} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, openCenter: val }); }} className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg" />
+                        <input value={editData.openCenter} maxLength={1} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, openCenter: val }); }} disabled={!openTimeReached} className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!openTimeReached ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} />
+                        {!openTimeReached && <p className="text-[8px] font-mono text-orange-500 mt-1">Can set only after {editData.openTime}</p>}
                       </div>
                       {/* Close Center */}
                       <div>
                         <div className="flex items-center justify-between mb-2"><label className="text-[10px] font-mono font-bold text-gray-600">Close Center</label><button onClick={resetCloseCenter} className="text-[8px] font-mono text-blue-600">Reset</button></div>
-                        <input value={editData.closeCenter} maxLength={1} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, closeCenter: val }); }} className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg" />
+                        <input value={editData.closeCenter} maxLength={1} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, closeCenter: val }); }} disabled={!closeTimeReached} className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!closeTimeReached ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} />
+                        {!closeTimeReached && <p className="text-[8px] font-mono text-orange-500 mt-1">Can set only after {editData.closeTime}</p>}
                       </div>
                       {/* Right Number */}
                       <div>
