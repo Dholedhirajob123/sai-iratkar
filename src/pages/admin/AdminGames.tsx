@@ -191,65 +191,99 @@ const AdminGames = () => {
   };
 
   const saveEdit = async () => {
-    if (!editData) return;
+  if (!editData) return;
 
-    const openTimeReached = isOpenTimeReached(editData.openTime);
-    const closeTimeReached = isCloseTimeReached(editData.closeTime);
+  // Get the original game from the current list
+  const originalGame = games.find(g => g.id === editData.id);
+  if (!originalGame) {
+    toast({ title: "Error", description: "Original game not found.", variant: "destructive" });
+    return;
+  }
 
-    // Time-based validation: only allow changes when time allows
-    if (editData.leftNumber !== "***" && !openTimeReached) {
-      toast({ title: "Cannot Declare Open Number Yet", description: `Open number can only be declared after ${editData.openTime}.`, variant: "destructive" });
-      return;
-    }
-    if (editData.openCenter && !openTimeReached) {
-      toast({ title: "Cannot Set Open Center Yet", description: `Open center can only be set after ${editData.openTime}.`, variant: "destructive" });
-      return;
-    }
-    if (editData.closeCenter && !closeTimeReached) {
-      toast({ title: "Cannot Set Close Center Yet", description: `Close center can only be set after ${editData.closeTime}.`, variant: "destructive" });
-      return;
-    }
-    if (editData.rightNumber !== "***" && !closeTimeReached) {
-      toast({ title: "Cannot Declare Close Number Yet", description: `Close number can only be declared after ${editData.closeTime}.`, variant: "destructive" });
-      return;
-    }
+  const originalCenterSplit = splitCenter(originalGame.centerNumber);
+  const openTimeReached = isOpenTimeReached(editData.openTime);
+  const closeTimeReached = isCloseTimeReached(editData.closeTime);
 
-    // Validate left and right numbers if they are not default
-    if (!isValidGameNumber(editData.leftNumber, "left") && editData.leftNumber !== "***") {
-      toast({ title: "Invalid Left Number", description: getValidationErrorMessage(editData.leftNumber, "left") || "Invalid left number.", variant: "destructive" });
-      return;
-    }
-    if (!isValidGameNumber(editData.rightNumber, "right") && editData.rightNumber !== "***") {
-      toast({ title: "Invalid Right Number", description: getValidationErrorMessage(editData.rightNumber, "right") || "Invalid right number.", variant: "destructive" });
-      return;
-    }
+  // Detect which fields have actually changed
+  const leftChanged = editData.leftNumber !== originalGame.leftNumber;
+  const openCenterChanged = editData.openCenter !== originalCenterSplit.open;
+  const closeCenterChanged = editData.closeCenter !== originalCenterSplit.close;
+  const rightChanged = editData.rightNumber !== originalGame.rightNumber;
 
-    // Validate center combination (only if at least one digit is provided)
-    if ((editData.openCenter || editData.closeCenter) && !validateCenterCombination(editData.openCenter, editData.closeCenter).isValid) {
-      toast({ title: "Invalid Center Number", description: `Open Center must be a single digit (0-9) and Close Center a single digit (0-9) forming a valid double digit or single digit.`, variant: "destructive" });
-      return;
-    }
+  // Validate left number (only if changed and not default)
+  if (leftChanged && editData.leftNumber !== "***" && !openTimeReached) {
+    toast({
+      title: "Cannot Declare Open Number Yet",
+      description: `Open number can only be declared after ${editData.openTime}.`,
+      variant: "destructive",
+    });
+    return;
+  }
 
-    const combinedCenter = combineCenter(editData.openCenter, editData.closeCenter);
+  // Validate open center (only if changed and not empty)
+  if (openCenterChanged && editData.openCenter && !openTimeReached) {
+    toast({
+      title: "Cannot Set Open Center Yet",
+      description: `Open center can only be set after ${editData.openTime}.`,
+      variant: "destructive",
+    });
+    return;
+  }
 
-    try {
-      await updateGame(editData.id, {
-        name: editData.name.trim(),
-        leftNumber: editData.leftNumber,
-        centerNumber: combinedCenter,
-        rightNumber: editData.rightNumber,
-        openTime: editData.openTime,
-        closeTime: editData.closeTime,
-        active: getGameActiveValue(editData),
-      });
-      await loadGames(true);
-      setEditing(null);
-      setEditData(null);
-      toast({ title: "Game Updated", description: `${editData.name} has been updated successfully.` });
-    } catch (error) {
-      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to update game.", variant: "destructive" });
-    }
-  };
+  // Validate close center (only if changed and not empty)
+  if (closeCenterChanged && editData.closeCenter && !closeTimeReached) {
+    toast({
+      title: "Cannot Set Close Center Yet",
+      description: `Close center can only be set after ${editData.closeTime}.`,
+      variant: "destructive",
+    });
+    return;
+  }
+
+  // Validate right number (only if changed and not default)
+  if (rightChanged && editData.rightNumber !== "***" && !closeTimeReached) {
+    toast({
+      title: "Cannot Declare Close Number Yet",
+      description: `Close number can only be declared after ${editData.closeTime}.`,
+      variant: "destructive",
+    });
+    return;
+  }
+
+  // Existing number format validations (unchanged)
+  if (!isValidGameNumber(editData.leftNumber, "left") && editData.leftNumber !== "***") {
+    toast({ title: "Invalid Left Number", description: getValidationErrorMessage(editData.leftNumber, "left") || "Invalid left number.", variant: "destructive" });
+    return;
+  }
+  if (!isValidGameNumber(editData.rightNumber, "right") && editData.rightNumber !== "***") {
+    toast({ title: "Invalid Right Number", description: getValidationErrorMessage(editData.rightNumber, "right") || "Invalid right number.", variant: "destructive" });
+    return;
+  }
+  if ((editData.openCenter || editData.closeCenter) && !validateCenterCombination(editData.openCenter, editData.closeCenter).isValid) {
+    toast({ title: "Invalid Center Number", description: "Open Center must be a single digit (0-9) and Close Center a single digit (0-9) forming a valid double digit or single digit.", variant: "destructive" });
+    return;
+  }
+
+  const combinedCenter = combineCenter(editData.openCenter, editData.closeCenter);
+
+  try {
+    await updateGame(editData.id, {
+      name: editData.name.trim(),
+      leftNumber: editData.leftNumber,
+      centerNumber: combinedCenter,
+      rightNumber: editData.rightNumber,
+      openTime: editData.openTime,
+      closeTime: editData.closeTime,
+      active: getGameActiveValue(editData),
+    });
+    await loadGames(true);
+    setEditing(null);
+    setEditData(null);
+    toast({ title: "Game Updated", description: `${editData.name} has been updated successfully.` });
+  } catch (error) {
+    toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to update game.", variant: "destructive" });
+  }
+};
 
   const handleDeleteGame = async (gameId: number, gameName: string) => {
     if (!window.confirm(`Are you sure you want to delete ${gameName}?`)) return;

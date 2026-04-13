@@ -27,7 +27,7 @@ import {
   Percent
 } from "lucide-react";
 import {
-  getActiveGames,
+  getGames,
   addBulkGameEntries,
   Game,
   GameEntry,
@@ -105,7 +105,7 @@ const Dashboard = () => {
   const loadGames = useCallback(async () => {
     try {
       setGamesLoading(true);
-      const allGames = await getActiveGames();
+      const allGames = await getGames();
       const gamesWithColors = allGames.map(game => ({
         ...game,
         leftNumberColor: (game as ExtendedGame).leftNumberColor || "#000000",
