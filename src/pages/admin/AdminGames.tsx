@@ -193,7 +193,6 @@ const AdminGames = () => {
   const saveEdit = async () => {
   if (!editData) return;
 
-  // Get the original game from the current list
   const originalGame = games.find(g => g.id === editData.id);
   if (!originalGame) {
     toast({ title: "Error", description: "Original game not found.", variant: "destructive" });
@@ -210,56 +209,35 @@ const AdminGames = () => {
   const closeCenterChanged = editData.closeCenter !== originalCenterSplit.close;
   const rightChanged = editData.rightNumber !== originalGame.rightNumber;
 
-  // Validate left number (only if changed and not default)
+  // Time-based validation – only if a field changed
   if (leftChanged && editData.leftNumber !== "***" && !openTimeReached) {
-    toast({
-      title: "Cannot Declare Open Number Yet",
-      description: `Open number can only be declared after ${editData.openTime}.`,
-      variant: "destructive",
-    });
+    toast({ title: "Cannot Declare Open Number Yet", description: `Open number can only be declared after ${editData.openTime}.`, variant: "destructive" });
     return;
   }
-
-  // Validate open center (only if changed and not empty)
   if (openCenterChanged && editData.openCenter && !openTimeReached) {
-    toast({
-      title: "Cannot Set Open Center Yet",
-      description: `Open center can only be set after ${editData.openTime}.`,
-      variant: "destructive",
-    });
+    toast({ title: "Cannot Set Open Center Yet", description: `Open center can only be set after ${editData.openTime}.`, variant: "destructive" });
     return;
   }
-
-  // Validate close center (only if changed and not empty)
   if (closeCenterChanged && editData.closeCenter && !closeTimeReached) {
-    toast({
-      title: "Cannot Set Close Center Yet",
-      description: `Close center can only be set after ${editData.closeTime}.`,
-      variant: "destructive",
-    });
+    toast({ title: "Cannot Set Close Center Yet", description: `Close center can only be set after ${editData.closeTime}.`, variant: "destructive" });
     return;
   }
-
-  // Validate right number (only if changed and not default)
   if (rightChanged && editData.rightNumber !== "***" && !closeTimeReached) {
-    toast({
-      title: "Cannot Declare Close Number Yet",
-      description: `Close number can only be declared after ${editData.closeTime}.`,
-      variant: "destructive",
-    });
+    toast({ title: "Cannot Declare Close Number Yet", description: `Close number can only be declared after ${editData.closeTime}.`, variant: "destructive" });
     return;
   }
 
-  // Existing number format validations (unchanged)
-  if (!isValidGameNumber(editData.leftNumber, "left") && editData.leftNumber !== "***") {
+  // Format validations – only for changed fields
+  if (leftChanged && !isValidGameNumber(editData.leftNumber, "left") && editData.leftNumber !== "***") {
     toast({ title: "Invalid Left Number", description: getValidationErrorMessage(editData.leftNumber, "left") || "Invalid left number.", variant: "destructive" });
     return;
   }
-  if (!isValidGameNumber(editData.rightNumber, "right") && editData.rightNumber !== "***") {
+  if (rightChanged && !isValidGameNumber(editData.rightNumber, "right") && editData.rightNumber !== "***") {
     toast({ title: "Invalid Right Number", description: getValidationErrorMessage(editData.rightNumber, "right") || "Invalid right number.", variant: "destructive" });
     return;
   }
-  if ((editData.openCenter || editData.closeCenter) && !validateCenterCombination(editData.openCenter, editData.closeCenter).isValid) {
+  // Center validation – only if either open or close center changed
+  if ((openCenterChanged || closeCenterChanged) && (editData.openCenter || editData.closeCenter) && !validateCenterCombination(editData.openCenter, editData.closeCenter).isValid) {
     toast({ title: "Invalid Center Number", description: "Open Center must be a single digit (0-9) and Close Center a single digit (0-9) forming a valid double digit or single digit.", variant: "destructive" });
     return;
   }
