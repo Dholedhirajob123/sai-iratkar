@@ -107,7 +107,7 @@ const AdminGames = () => {
   };
 
   const splitCenter = (center: string): { open: string; close: string } => {
-    if (center === "*") return { open: "*", close: "" };
+    if (center === "*") return { open: "", close: "" };
     if (!center) return { open: "", close: "" };
     if (center.length === 1) return { open: center, close: "" };
     return { open: center[0], close: center[1] };
