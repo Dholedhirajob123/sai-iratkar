@@ -337,7 +337,7 @@ const Dashboard = () => {
                 onClick={() => {
                   window.open( 
                     `https://wa.me/?text=${encodeURIComponent(
-                      "Check out Si King! " + window.location.origin
+                      "Check out SR BOSS! " + window.location.origin
                     )}`,
                     "_blank"
                   );
@@ -411,7 +411,7 @@ const Dashboard = () => {
               <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
                 <img 
                   src="/icons/launchericon-192x192.png" 
-                  alt="Si King Logo" 
+                  alt="SR BOSS Logo" 
                   className="w-10 h-10 object-contain"
                 />
               </div>
@@ -432,7 +432,7 @@ const Dashboard = () => {
             <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
               <img 
                 src="/icons/launchericon-192x192.png" 
-                alt="Si King Logo" 
+                alt="SR BOSS Logo" 
                 className="w-10 h-10 object-contain"
               />
             </div>
@@ -511,7 +511,7 @@ const Dashboard = () => {
                 <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
                   <img 
                     src="/icons/launchericon-192x192.png" 
-                    alt="Si King Logo" 
+                    alt="SR BOSS Logo" 
                     className="w-9 h-9 object-contain"
                   />
                   <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-yellow-400" />
@@ -519,7 +519,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h1 className="text-xl font-mono font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Si King
+                  SR BOSS
                 </h1>
                 <p className="text-[10px] text-gray-500">{timeStr}</p>
               </div>
@@ -647,7 +647,7 @@ const Dashboard = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl mb-4 overflow-hidden">
               <img 
                 src="/icons/launchericon-192x192.png" 
-                alt="Si King Logo" 
+                alt="SR BOSS Logo" 
                 className="w-12 h-12 object-contain"
               />
             </div>
