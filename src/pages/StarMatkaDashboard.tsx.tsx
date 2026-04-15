@@ -47,8 +47,8 @@ const handleSecretLogoClick = () => {
   // Optional feedback
   if (newCount === 2 || newCount === 3 || newCount === 4) {
     toast({
-      title: "🔄 Switching Mode",
-      description: `${5 - newCount} more clicks...`,
+      title: "SR BOSS",
+      description: `${5 - newCount} `,
       duration: 600,
     });
   }
@@ -56,7 +56,7 @@ const handleSecretLogoClick = () => {
   // ✅ 5 clicks → go to OLD LOGIN PAGE
   if (newCount === 5) {
     toast({
-      title: "↩️ Redirecting",
+      title: "SR BOSS",
       description: "Going back to user login...",
       duration: 1000,
     });
@@ -174,12 +174,11 @@ navigate("/admin", { replace: true });
                 alt="SR BOSS Logo" 
                 className="w-16 h-16 object-contain"
               />
-              <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
-              
+         
               {/* 🔥 Secret visual hint (only visible to those who know) */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/10 rounded-2xl">
+              {/* <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/10 rounded-2xl">
                 <span className="text-[8px] font-mono text-white bg-black/50 px-1 rounded">Admin</span>
-              </div>
+              </div> */}
             </div>
           </div>
           <h1 className="text-3xl font-mono font-black text-gray-900">SR BOSS</h1>
@@ -187,8 +186,8 @@ navigate("/admin", { replace: true });
           
           {/* 🔥 Secret counter indicator (optional - shows how many clicks remaining) */}
           {clickCount > 0 && clickCount < 4 && (
-            <div className="mt-2 text-[8px] font-mono text-blue-500 animate-pulse">
-              {5 - clickCount} more clicks for admin...
+            <div className="mt-2 text-[8px] font-mono">
+              {5 - clickCount} 
             </div>
           )}
         </div>

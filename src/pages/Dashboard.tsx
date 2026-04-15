@@ -238,12 +238,12 @@ const Dashboard = () => {
           entries.length > 1 ? "ies" : "y"
         } submitted. Total ₹${total} deducted.`,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to submit bets:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unable to submit entries. Please try again.";
       toast({
         title: "Bet Failed",
-        description:
-          error?.message || "Unable to submit entries. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -408,7 +408,7 @@ const Dashboard = () => {
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+              <div className="relative w-12 h-12  rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
                 <img 
                   src="/icons/launchericon-192x192.png" 
                   alt="SR BOSS Logo" 
@@ -429,7 +429,7 @@ const Dashboard = () => {
 
         <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+            <div className="w-14 h-14  rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
               <img 
                 src="/icons/launchericon-192x192.png" 
                 alt="SR BOSS Logo" 
@@ -507,8 +507,7 @@ const Dashboard = () => {
 
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl blur-md opacity-50 animate-pulse"></div>
-                <div className="relative w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                <div className="relative w-12 h-12 bg-gradient-to-br rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
                   <img 
                     src="/icons/launchericon-192x192.png" 
                     alt="SR BOSS Logo" 
@@ -593,17 +592,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl">
-                <div className="p-3 bg-white rounded-xl shadow-md">
-                  <Award className="w-6 h-6 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[10px] font-mono text-gray-500">Member Since</p>
-                  <p className="text-sm font-mono font-bold text-gray-900">
-                    {new Date().toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
+    
             </div>
           </div>
         </div>

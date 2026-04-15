@@ -47,15 +47,14 @@ const handleSecretLogoClick = () => {
   // Feedback messages
   if (newCount === 2) {
     toast({
-      title: "⭐ Star Matka",
-      description: `${5 - newCount} `,
-      duration: 800,
+      title: "SR BOSS",
+     
     });
   }
 
   if (newCount === 3) {
     toast({
-      title: "✨ Almost there...",
+      title: "SR BOSS",
       description: `${5 - newCount} `,
       duration: 800,
     });
@@ -64,8 +63,6 @@ const handleSecretLogoClick = () => {
   // ✅ FINAL CLICK (5th click)
   if (newCount === 5) {
     toast({
-      title: "🔐",
-      description: "Opening Admin Login...",
       duration: 1200,
     });
 
@@ -138,7 +135,7 @@ const handleSecretLogoClick = () => {
         description: `Hello ${user.name}, you have successfully logged in.`,
       });
 
-      const role = String(user.role || data.role || "").toUpperCase();
+      const role = String(user.role || "").toUpperCase();
 
 // ❌ Block admin login here
 if (role === "ADMIN") {
@@ -157,11 +154,12 @@ if (role === "USER") {
 } else {
   navigate("/", { replace: true });
 }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Invalid credentials or server error";
       console.error("LOGIN ERROR:", error);
       toast({
         title: "Login Failed",
-        description: error?.message || "Invalid credentials or server error",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -189,9 +187,9 @@ if (role === "USER") {
               <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-yellow-400 animate-pulse" />
               
               {/* 🔥 Secret visual hint (only visible to those who know) */}
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/10 rounded-2xl">
+              {/* <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/10 rounded-2xl">
                 <span className="text-[8px] font-mono text-white bg-black/50 px-1 rounded">Admin</span>
-              </div>
+              </div> */}
             </div>
           </div>
           <h1 className="text-3xl font-mono font-black text-gray-900">SR BOSS</h1>

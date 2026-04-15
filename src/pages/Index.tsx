@@ -21,8 +21,8 @@ const Index = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="text-center animate-pulse-slow">
         <div className="relative inline-block">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-xl opacity-30 animate-pulse"></div>
-          <div className="relative inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-xl mb-6 overflow-hidden">
+          <div className="absolute inset-0  rounded-2xl blur-xl opacity-30 animate-pulse"></div>
+          <div className="relative inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br rounded-2xl shadow-xl mb-6 overflow-hidden">
             <img 
               src="/icons/launchericon-192x192.png" 
               alt="SR BOSS Logo" 
@@ -30,7 +30,7 @@ const Index = () => {
             />
           </div>
         </div>
-        <h1 className="text-3xl font-mono font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+<h1 className="text-3xl font-mono font-black text-black dark:text-black mb-4">
           SR BOSS
         </h1>
         <p className="font-mono text-gray-500 text-sm">Loading...</p>
