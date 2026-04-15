@@ -127,9 +127,14 @@ const AdminEntries = () => {
     }
   };
 
-  useEffect(() => {
-    loadEntries();
-  }, []);
+const hasFetched = useRef(false);
+
+useEffect(() => {
+  if (hasFetched.current) return;
+
+  hasFetched.current = true;
+  loadEntries();
+}, []);
 
   const handleRefresh = () => {
     if (!refreshing) {

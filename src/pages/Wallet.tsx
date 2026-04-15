@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -17,7 +17,7 @@ import { getUserTransactions, Transaction } from "@/lib/gameApi";
 import BottomNav from "@/components/BottomNav";
 
 const WalletPage = () => {
-  const { user, loading } = useAuth();
+const { user, loading, refreshUser } = useAuth();
   const navigate = useNavigate();
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -58,9 +58,16 @@ const WalletPage = () => {
     }
   }, [user?.id]);
 
-  useEffect(() => {
-    loadTransactions();
-  }, [loadTransactions]);
+const hasFetched = useRef(false);
+
+useEffect(() => {
+  if (!user?.id) return;
+
+  if (hasFetched.current) return;
+
+  hasFetched.current = true;
+  loadTransactions();
+}, [user?.id, loadTransactions]);
 
   if (loading) {
     return (
@@ -149,7 +156,10 @@ const WalletPage = () => {
 
         <button
           type="button"
-          onClick={loadTransactions}
+          onClick={async () => {
+    await refreshUser();
+    await loadTransactions();
+  }}
           disabled={txLoading}
           className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-2 text-xs font-mono font-semibold bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition-all duration-200 disabled:opacity-50"
         >

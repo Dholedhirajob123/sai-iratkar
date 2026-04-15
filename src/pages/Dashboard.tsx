@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -131,11 +131,14 @@ const Dashboard = () => {
     }
   }, [toast]);
 
-  useEffect(() => {
-    if (user) {
-      loadGames();
-    }
-  }, [user, loadGames]);
+const hasFetched = useRef(false);
+
+useEffect(() => {
+  if (!user || hasFetched.current) return;
+
+  hasFetched.current = true;
+  loadGames();
+}, [user, loadGames]);
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);

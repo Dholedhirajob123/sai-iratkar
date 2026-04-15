@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Clock, Search, ChevronDown, ChevronUp } from "lucide-react";
@@ -25,7 +25,7 @@ const BetHistory = () => {
       }
     }
   }, [user, loading, navigate]);
-
+const hasFetched = useRef(false);
   useEffect(() => {
     const loadHistory = async () => {
       if (!user) return;
@@ -49,10 +49,11 @@ const BetHistory = () => {
       }
     };
 
-    if (user) {
-      loadHistory();
-    }
-  }, [user]);
+if (!user || hasFetched.current) return;
+
+  hasFetched.current = true;
+  loadHistory();
+}, [user]);
 
   // Apply filters
   useEffect(() => {
