@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
-import { getCurrentUser } from "@/lib/gameApi";
+import { clearAllCaches, getCurrentUser } from "@/lib/gameApi";
 
 export interface AuthUser {
   id: number;
@@ -131,10 +131,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     []
   );
 
-  const logout = useCallback(() => {
-    localStorage.clear();
-    setUser(null);
-  }, []);
+const logout = useCallback(() => {
+  console.log("Logout triggered"); // 👈 check
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("star_current_user");
+  localStorage.removeItem("role");
+
+  clearAllCaches();
+
+  setUser(null);
+}, []);
 
   return (
     <AuthContext.Provider

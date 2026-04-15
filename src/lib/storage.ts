@@ -447,4 +447,7 @@ export const setCurrentUser = (user: User) => safeSet(KEYS.currentUser, user);
 
 export const getCurrentUser = (): User | null => safeGet(KEYS.currentUser, null);
 
-export const logout = () => localStorage.removeItem(KEYS.currentUser);
+export const logout = () => {
+  localStorage.removeItem(KEYS.currentUser); // user
+  localStorage.removeItem("token");          // 🔥 IMPORTANT
+};
