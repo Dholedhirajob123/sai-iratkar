@@ -135,7 +135,7 @@ useEffect(() => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pb-20">
       {/* Header with Gradient Background */}
       <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-b-3xl shadow-lg">
-        <div className="absolute top-0 right-0 opacity-10">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
           <Sparkles className="w-32 h-32" />
         </div>
         <div className="relative z-10 text-center">
@@ -155,14 +155,14 @@ useEffect(() => {
         </div>
 
         <button
-          type="button"
-          onClick={async () => {
+  type="button"
+  onClick={async () => {
     await refreshUser();
     await loadTransactions();
   }}
-          disabled={txLoading}
-          className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-2 text-xs font-mono font-semibold bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition-all duration-200 disabled:opacity-50"
-        >
+  disabled={txLoading}
+  className="absolute bottom-4 right-4 z-[999] flex items-center gap-2 px-3 py-2 text-xs font-mono font-semibold bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition-all duration-200 disabled:opacity-50"
+>
           <RefreshCw
             className={`w-4 h-4 ${txLoading ? "animate-spin" : ""}`}
           />
