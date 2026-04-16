@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "@/pages/Config";
+
 export interface User {
   id: number;
   name: string;
@@ -102,8 +104,6 @@ export interface LoginResponse {
   id: number;
 }
 
-const BASE_URL = "http://localhost:5003";
-
 // Cache keys for offline storage
 const CACHE_KEYS = {
   GAMES: 'cached_games',
@@ -192,7 +192,7 @@ export const loginUser = async (payload: {
   mobileNumber: string;
   password: string;
 }): Promise<LoginResponse> => {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -210,7 +210,7 @@ export const loginUser = async (payload: {
 };
 
 export const getCurrentUser = async (token: string): Promise<User> => {
-  const response = await fetch(`${BASE_URL}/auth/me`, {
+  const response = await fetch(`${API_BASE_URL}/auth/me`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -231,7 +231,7 @@ export const getCurrentUser = async (token: string): Promise<User> => {
 
 export const getGames = async (): Promise<Game[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/public/games`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/public/games`, {
       headers: getHeaders(),
     });
     const games = await handleResponse(response);
@@ -263,7 +263,7 @@ export const getGames = async (): Promise<Game[]> => {
 export const getActiveGames = async (): Promise<Game[]> => {
   try {
     const response = await fetchWithTimeout(
-      `${BASE_URL}/public/games/active`,
+      `${API_BASE_URL}/public/games/active`,
       {
         headers: getHeaders(),
       }
@@ -290,7 +290,7 @@ export const getActiveGames = async (): Promise<Game[]> => {
 
 export const getGameById = async (id: number): Promise<Game> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/public/games/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/public/games/${id}`, {
       headers: getHeaders(),
     });
     const game = await handleResponse(response);
@@ -317,7 +317,7 @@ export const getGameById = async (id: number): Promise<Game> => {
 };
 
 export const createGame = async (game: Partial<Game>): Promise<Game> => {
-  const response = await fetch(`${BASE_URL}/games`, {
+  const response = await fetch(`${API_BASE_URL}/games`, {
     method: "POST",
     headers: getHeaders(true),
     body: JSON.stringify({
@@ -364,7 +364,7 @@ export const updateGame = async (
     rightNumberBgColor: game.rightNumberBgColor,
   };
   
-  const response = await fetch(`${BASE_URL}/games/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/games/${id}`, {
     method: "PUT",
     headers: getHeaders(true),
     body: JSON.stringify(updatePayload),
@@ -378,7 +378,7 @@ export const updateGame = async (
 };
 
 export const deleteGame = async (id: number): Promise<string> => {
-  const response = await fetch(`${BASE_URL}/games/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/games/${id}`, {
     method: "DELETE",
     headers: getHeaders(),
   });
@@ -388,7 +388,7 @@ export const deleteGame = async (id: number): Promise<string> => {
 };
 
 export const toggleGameStatus = async (id: number): Promise<Game> => {
-  const response = await fetch(`${BASE_URL}/games/${id}/toggle-status`, {
+  const response = await fetch(`${API_BASE_URL}/games/${id}/toggle-status`, {
     method: "PATCH",
     headers: getHeaders(),
   });
@@ -400,7 +400,7 @@ export const toggleGameStatus = async (id: number): Promise<Game> => {
 export const searchGames = async (name: string): Promise<Game[]> => {
   try {
     const response = await fetchWithTimeout(
-      `${BASE_URL}/public/games/search?name=${encodeURIComponent(name)}`,
+      `${API_BASE_URL}/public/games/search?name=${encodeURIComponent(name)}`,
       { headers: getHeaders() }
     );
     const games = await handleResponse(response);
@@ -433,7 +433,7 @@ export const searchGames = async (name: string): Promise<Game[]> => {
 
 export const getUserById = async (id: number): Promise<User> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/users/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/users/${id}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -446,7 +446,7 @@ export const getUserById = async (id: number): Promise<User> => {
 // ==================== GAME ENTRIES ====================
 
 export const addGameEntry = async (entry: GameEntry): Promise<GameEntry> => {
-  const response = await fetch(`${BASE_URL}/game-entries`, {
+  const response = await fetch(`${API_BASE_URL}/game-entries`, {
     method: "POST",
     headers: getHeaders(true),
     body: JSON.stringify(entry),
@@ -459,7 +459,7 @@ export const addGameEntry = async (entry: GameEntry): Promise<GameEntry> => {
 export const addBulkGameEntries = async (
   entries: GameEntry[]
 ): Promise<GameEntry[]> => {
-  const response = await fetch(`${BASE_URL}/game-entries/bulk`, {
+  const response = await fetch(`${API_BASE_URL}/game-entries/bulk`, {
     method: "POST",
     headers: getHeaders(true),
     body: JSON.stringify(entries),
@@ -471,7 +471,7 @@ export const addBulkGameEntries = async (
 
 export const getAllGameEntries = async (): Promise<GameEntry[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/game-entries`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/game-entries`, {
       headers: getHeaders(),
     });
     const entries = await handleResponse(response);
@@ -486,7 +486,7 @@ export const getAllGameEntries = async (): Promise<GameEntry[]> => {
 
 export const getEntryById = async (entryId: number): Promise<GameEntry> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/game-entries/${entryId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/game-entries/${entryId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -505,7 +505,7 @@ export const getEntriesByUserId = async (
   userId: number
 ): Promise<GameEntry[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/game-entries/user/${userId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/game-entries/user/${userId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -523,7 +523,7 @@ export const getEntriesByGameId = async (
   gameId: number
 ): Promise<GameEntry[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/game-entries/game/${gameId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/game-entries/game/${gameId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -542,7 +542,7 @@ export const getEntriesByGameId = async (
 export const addLeftNumber = async (
   payload: LeftNumberEntry
 ): Promise<LeftNumberEntry> => {
-  const response = await fetch(`${BASE_URL}/left-numbers`, {
+  const response = await fetch(`${API_BASE_URL}/left-numbers`, {
     method: "POST",
     headers: getHeaders(true),
     body: JSON.stringify(payload),
@@ -552,7 +552,7 @@ export const addLeftNumber = async (
 
 export const getAllLeftNumbers = async (): Promise<LeftNumberEntry[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/left-numbers`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/left-numbers`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -566,7 +566,7 @@ export const getLeftNumberById = async (
   id: number
 ): Promise<LeftNumberEntry> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/left-numbers/${id}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/left-numbers/${id}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -580,7 +580,7 @@ export const getLeftNumbersByGame = async (
   gameId: number
 ): Promise<LeftNumberEntry[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/left-numbers/game/${gameId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/left-numbers/game/${gameId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -595,7 +595,7 @@ export const getLeftNumbersByGame = async (
 export const declareResult = async (
   payload: GameResult
 ): Promise<GameResult> => {
-  const response = await fetch(`${BASE_URL}/game-results`, {
+  const response = await fetch(`${API_BASE_URL}/game-results`, {
     method: "POST",
     headers: getHeaders(true),
     body: JSON.stringify(payload),
@@ -607,7 +607,7 @@ export const declareResult = async (
 
 export const getResults = async (): Promise<GameResult[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/public/game-results`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/public/game-results`, {
       headers: getHeaders(),
     });
     const results = await handleResponse(response);
@@ -622,7 +622,7 @@ export const getResults = async (): Promise<GameResult[]> => {
 
 export const getResultById = async (resultId: number): Promise<GameResult> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/public/game-results/${resultId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/public/game-results/${resultId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -641,7 +641,7 @@ export const getResultsByGameId = async (
   gameId: number
 ): Promise<GameResult[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/public/game-results/game/${gameId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/public/game-results/game/${gameId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -660,7 +660,7 @@ export const getResultsByGameId = async (
 export const addTransaction = async (
   payload: Partial<Transaction>
 ): Promise<Transaction> => {
-  const response = await fetch(`${BASE_URL}/transactions`, {
+  const response = await fetch(`${API_BASE_URL}/transactions`, {
     method: "POST",
     headers: getHeaders(true),
     body: JSON.stringify(payload),
@@ -672,7 +672,7 @@ export const addTransaction = async (
 
 export const getAllTransactions = async (): Promise<Transaction[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/transactions`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/transactions`, {
       headers: getHeaders(),
     });
     const transactions = await handleResponse(response);
@@ -689,7 +689,7 @@ export const getTransactionById = async (
   transactionId: number
 ): Promise<Transaction> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/transactions/${transactionId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/transactions/${transactionId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);
@@ -703,7 +703,7 @@ export const getUserTransactions = async (
   userId: number
 ): Promise<Transaction[]> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/transactions/user/${userId}`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/transactions/user/${userId}`, {
       headers: getHeaders(),
     });
     return handleResponse(response);

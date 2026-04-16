@@ -14,6 +14,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "./Config";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -75,7 +76,7 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5003/auth/register", {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

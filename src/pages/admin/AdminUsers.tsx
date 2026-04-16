@@ -26,6 +26,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { API_BASE_URL } from "../Config";
 
 interface User {
   id: number;
@@ -68,7 +69,7 @@ const AdminUsers = () => {
       isFetchingRef.current = true;
       setLoading(true);
 
-      const response = await fetch("http://localhost:5003/admin/users", {
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
         method: "GET",
         headers: getHeaders(),
       });
@@ -99,7 +100,7 @@ const AdminUsers = () => {
 
   const handleApprove = async (id: number, name: string) => {
     try {
-      const response = await fetch(`http://localhost:5003/admin/approve/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/approve/${id}`, {
         method: "PUT", headers: getHeaders(),
       });
       const message = await response.text();
@@ -114,7 +115,7 @@ const AdminUsers = () => {
 
   const handleReject = async (id: number, name: string) => {
     try {
-      const response = await fetch(`http://localhost:5003/admin/reject/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/reject/${id}`, {
         method: "PUT", headers: getHeaders(),
       });
       const message = await response.text();
@@ -131,7 +132,7 @@ const AdminUsers = () => {
     try {
       const newValue = !user.canAddPlayerName;
       const response = await fetch(
-        `http://localhost:5003/admin/player-permission/${user.id}?value=${newValue}`,
+        `${API_BASE_URL}/admin/player-permission/${user.id}?value=${newValue}`,
         { method: "PUT", headers: getHeaders() }
       );
       const message = await response.text();
@@ -151,7 +152,7 @@ const AdminUsers = () => {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:5003/admin/reset-password/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/reset-password/${id}`, {
         method: "PUT", headers: getHeaders(),
         body: JSON.stringify({ password: newPassword }),
       });
@@ -169,7 +170,7 @@ const AdminUsers = () => {
   const handleDeleteUser = async (id: number, name: string) => {
     if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
     try {
-      const response = await fetch(`http://localhost:5003/admin/delete/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/delete/${id}`, {
         method: "DELETE", headers: getHeaders(),
       });
       const message = await response.text();
@@ -189,7 +190,7 @@ const AdminUsers = () => {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:5003/admin/add-balance/${id}?amount=${amount}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/add-balance/${id}?amount=${amount}`, {
         method: "PUT", headers: getHeaders(),
       });
       const message = await response.text();
@@ -210,7 +211,7 @@ const AdminUsers = () => {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:5003/admin/remove-balance/${id}?amount=${amount}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/remove-balance/${id}?amount=${amount}`, {
         method: "PUT", headers: getHeaders(),
       });
       const message = await response.text();
