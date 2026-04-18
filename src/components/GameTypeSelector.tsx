@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { X, Trash2, User, Hash, ArrowLeft, AlertCircle, TrendingUp, DollarSign, Zap, Shield, Star, Trophy } from "lucide-react";
 import { Game, getUserById } from "@/lib/gameApi";
 import { useToast } from "@/hooks/use-toast";
+import { MessageCircle  } from "lucide-react";
+
 
 const OPEN_GAME_TYPES = [
   "SINGLE",
@@ -133,9 +135,8 @@ const GameTypeSelector = ({
   const [playerNameError, setPlayerNameError] = useState("");
   const [amountError, setAmountError] = useState("");
   const { toast } = useToast();
-
   const totalAmount = entries.reduce((s, e) => s + e.amount, 0);
-
+const ADMIN_NUMBER = "919922837879"; // replace with your admin WhatsApp number
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -543,6 +544,74 @@ const GameTypeSelector = ({
     return "Minimum: ₹5 | Maximum: ₹1000";
   };
 
+const getSrNo = () => {
+  const today = new Date().toLocaleDateString("en-GB");
+
+  const savedData = localStorage.getItem("srData");
+
+  if (savedData) {
+    const parsed = JSON.parse(savedData);
+
+    // ✅ same day → continue
+    if (parsed.date === today) {
+      return parsed.srNo;
+    }
+  }
+
+  // ❌ new day → reset to 1
+  return 1;
+};
+
+const incrementSrNo = () => {
+  const today = new Date().toLocaleDateString("en-GB");
+  const current = getSrNo();
+
+  const newData = {
+    date: today,
+    srNo: current + 1,
+  };
+
+  localStorage.setItem("srData", JSON.stringify(newData));
+};
+const formatBetHistory = () => {
+  const srNo = getSrNo();
+
+  let message = `📊 BET HISTORY\n`;
+  message += `Game: ${game.name}\n`;
+  message += `Type: ${playType.toUpperCase()}\n`;
+  message += `Date: ${new Date().toLocaleDateString("en-GB")}\n`;
+  message += `----------------------\n`;
+  message += `Sr No: ${srNo}\n`;
+  message += `----------------------\n`;
+
+  if (canAddPlayerName) {
+    message += `Customer name: ${entries[0]?.playerName || "-"}\n`;
+    message += `----------------------\n`;
+  }
+
+  entries.forEach((e, i) => {
+    message += `${i + 1}. ${e.number} x ${e.amount}\n`;
+  });
+
+  message += `======================\n`;
+  message += `Total: ₹${totalAmount}\n`;
+
+  if (userName) {
+    message += `======================\n`;
+    message += `--${userName}`;
+  }
+
+  return message;
+};
+
+const sendToAdminWhatsApp = () => {
+  const text = formatBetHistory();
+  window.open(`https://wa.me/${ADMIN_NUMBER}?text=${encodeURIComponent(text)}`, "_blank");
+
+  incrementSrNo(); // ✅ very important
+};
+
+
   return (
     <div className="fixed inset-0 z-[100] bg-gradient-to-br from-gray-50 to-white flex flex-col">
       {/* Header with Back Button */}
@@ -699,7 +768,15 @@ const GameTypeSelector = ({
             </button>
           </div>
         )}
-
+<div className="flex justify-end">
+<button
+  type="button"
+  onClick={sendToAdminWhatsApp}
+  className="flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white p-3.5 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-[1.05]"
+>
+  <MessageCircle size={20} />
+</button>
+</div>
         {/* SP-DP-TP Selection */}
         {selectedType === "SP-DP-TP" && (
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 p-5 shadow-sm animate-fadeIn">
