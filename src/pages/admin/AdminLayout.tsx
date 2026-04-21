@@ -13,7 +13,8 @@ import {
   X,
   Bell,
   UserCircle,
-  ChevronDown
+  ChevronDown,
+  Megaphone
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -50,6 +51,7 @@ const AdminLayout = () => {
     { id: "entries", label: "Entries", icon: FileText, path: "/admin/entries", color: "purple", description: "View and manage entries" },
     { id: "history", label: "History", icon: History, path: "/admin/history", color: "orange", description: "Audit logs and history" },
     { id: "results", label: "Results", icon: Trophy, path: "/admin/results", color: "yellow", description: "Check results and stats" },
+    { id: "notice", label: "Notice", icon: Megaphone, path: "/admin/notice", color: "red", description: "Manage announcements" },
   ];
 
   const currentTab = tabs.find((tab) => location.pathname === tab.path)?.id || "users";
@@ -61,6 +63,7 @@ const AdminLayout = () => {
       purple: "bg-purple-50 text-purple-600 border-purple-200",
       orange: "bg-orange-50 text-orange-600 border-orange-200",
       yellow: "bg-yellow-50 text-yellow-600 border-yellow-200",
+      red: "bg-red-50 text-red-600 border-red-200",
     };
     return colors[color as keyof typeof colors] || colors.blue;
   };

@@ -16,14 +16,14 @@ import WalletPage from "./pages/Wallet";
 import BetHistory from "./pages/BetHistory";
 import NotFound from "./pages/NotFound";
 import StarMatkaDashboard from "./pages/StarMatkaDashboard.tsx"; // Import the new dashboard
-
 import { 
   AdminLayout, 
   AdminUsers, 
   AdminGames, 
   AdminEntries, 
   AdminHistory, 
-  AdminResults 
+  AdminResults,
+  AdminNotice
 } from "./pages/admin";
 
 const queryClient = new QueryClient();
@@ -50,10 +50,10 @@ const App = () => (
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/history" element={<BetHistory />} />
             
-            {/* 🔥 Star Matka Secret Dashboard - NOT nested under admin */}
+            {/* Star Matka Secret Dashboard */}
             <Route path="/star-matka" element={<StarMatkaDashboard />} />
             
-            {/* Admin Routes - Note: These are NOT nested, they are separate */}
+            {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminUsers />} />
               <Route path="users" element={<AdminUsers />} />
@@ -61,6 +61,7 @@ const App = () => (
               <Route path="entries" element={<AdminEntries />} />
               <Route path="history" element={<AdminHistory />} />
               <Route path="results" element={<AdminResults />} />
+              <Route path="notice" element={<AdminNotice />} />
             </Route>
             
             {/* 404 Catch-all */}
