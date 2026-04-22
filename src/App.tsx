@@ -23,7 +23,9 @@ import {
   AdminEntries, 
   AdminHistory, 
   AdminResults,
-  AdminNotice
+  AdminNotice,
+    AdminGameRates
+
 } from "./pages/admin";
 
 const queryClient = new QueryClient();
@@ -62,6 +64,8 @@ const App = () => (
               <Route path="history" element={<AdminHistory />} />
               <Route path="results" element={<AdminResults />} />
               <Route path="notice" element={<AdminNotice />} />
+                            <Route path="gamerates" element={<AdminGameRates  />} />
+
             </Route>
             
             {/* 404 Catch-all */}

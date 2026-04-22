@@ -36,7 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import GameCard from "@/components/GameCard";
 import GameTypeSelector from "@/components/GameTypeSelector";
 import BottomNav from "@/components/BottomNav";
-
+import GameRatesModal from "@/components/GameRatesModal";
 // Extended Game interface with color properties
 interface ExtendedGame extends Game {
   leftNumberColor?: string;
@@ -88,7 +88,7 @@ const Dashboard = () => {
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [copied, setCopied] = useState(false);
   const [submittingBet, setSubmittingBet] = useState(false);
-  const [showGameRateModal, setShowGameRateModal] = useState(false);
+const [showGameRateModal, setShowGameRateModal] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -456,8 +456,7 @@ useEffect(() => {
             { icon: User, label: "Profile", action: () => setShowProfile(true), color: "purple", bg: "bg-purple-50", text: "text-purple-600" },
             { icon: Wallet, label: "Balance", path: "/wallet", color: "green", bg: "bg-green-50", text: "text-green-600", badge: `₹${user.balance}` },
             { icon: History, label: "History", path: "/history", color: "orange", bg: "bg-orange-50", text: "text-orange-600" },
-            { icon: Percent, label: "Game Rates", action: () => setShowGameRateModal(false), color: "indigo", bg: "bg-indigo-50", text: "text-indigo-600" },
-            { icon: Share2, label: "Share", action: handleShare, color: "teal", bg: "bg-teal-50", text: "text-teal-600" },
+  { icon: Percent, label: "Game Rates", action: () => setShowGameRateModal(true), color: "indigo", bg: "bg-indigo-50", text: "text-indigo-600" },            { icon: Share2, label: "Share", action: handleShare, color: "teal", bg: "bg-teal-50", text: "text-teal-600" },
           ].map((item, idx) => (
             <button
               key={idx}
@@ -672,7 +671,11 @@ useEffect(() => {
           userId={user.id}
         />
       )}
-
+  {/* Game Rates Popup */}
+      <GameRatesModal 
+        isOpen={showGameRateModal} 
+        onClose={() => setShowGameRateModal(false)} 
+      />
       <BottomNav />
     </div>
   );

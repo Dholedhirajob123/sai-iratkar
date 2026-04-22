@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Wallet, Clock, LogOut } from "lucide-react";
+import { Home, Wallet, Clock, LogOut, Percent } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { NavLink } from "./NavLink";
 

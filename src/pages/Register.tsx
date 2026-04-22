@@ -148,7 +148,7 @@ const Register = () => {
               {/* Full Name Field */}
               <div>
                 <label className="text-xs font-mono font-bold text-gray-700 mb-1.5 block">
-                  Full Name
+                  Name
                 </label>
                 <div className="relative group">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -156,7 +156,7 @@ const Register = () => {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your full name"
+                    placeholder="Enter your  name"
                     className="w-full bg-gray-50 border-2 border-gray-200 pl-10 pr-4 py-3 text-sm font-mono font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white rounded-xl transition-all duration-200"
                   />
                 </div>

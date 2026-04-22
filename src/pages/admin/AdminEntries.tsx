@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { Search, Filter, TrendingUp, Users, DollarSign, Calendar, Clock, Award, Gamepad2, RefreshCw, Info } from "lucide-react";
+import { Search, Filter, TrendingUp, Users, DollarSign, Calendar, Clock, Award, Gamepad2, RefreshCw, Info, Unlock, Lock, ListChecks } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getEntriesByGameId, getGames, Game, GameEntry } from "@/lib/gameApi";
 import { useToast } from "@/hooks/use-toast";
@@ -68,12 +68,12 @@ const AdminEntries = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGameType, setSelectedGameType] = useState<string>("all");
   const [selectedGameName, setSelectedGameName] = useState<string>("all");
+  const [selectedPlayType, setSelectedPlayType] = useState<string>("all"); // New filter for OPEN/CLOSE/ALL
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showNumberInfo, setShowNumberInfo] = useState(false);
   const { toast } = useToast();
   
-  // Track if data has been loaded
   const dataLoadedRef = useRef(false);
   const initialLoadRef = useRef(false);
 
@@ -127,14 +127,13 @@ const AdminEntries = () => {
     }
   };
 
-const hasFetched = useRef(false);
+  const hasFetched = useRef(false);
 
-useEffect(() => {
-  if (hasFetched.current) return;
-
-  hasFetched.current = true;
-  loadEntries();
-}, []);
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    loadEntries();
+  }, []);
 
   const handleRefresh = () => {
     if (!refreshing) {
@@ -142,7 +141,6 @@ useEffect(() => {
     }
   };
 
-  // Get unique game types with display names
   const gameTypes = useMemo(() => {
     const types = new Set(entries.map((e) => getGameTypeDisplayName(e.gameType || "")).filter(Boolean));
     return ["all", ...Array.from(types).sort()];
@@ -159,6 +157,7 @@ useEffect(() => {
       const gameName = entry.gameName || "";
       const gameType = getGameTypeDisplayName(entry.gameType || "");
       const number = entry.number || "";
+      const playType = entry.playType || "";
 
       const matchesSearch =
         playerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -172,15 +171,26 @@ useEffect(() => {
       const matchesGameName =
         selectedGameName === "all" || entry.gameName === selectedGameName;
 
-      return matchesSearch && matchesType && matchesGameName;
-    });
-  }, [entries, searchQuery, selectedGameType, selectedGameName]);
+      const matchesPlayType = selectedPlayType === "all" || 
+        playType.toLowerCase() === selectedPlayType.toLowerCase();
 
-  // Group by Game Type AND Game Name
-  const groupedByTypeAndGame = useMemo(() => {
+      return matchesSearch && matchesType && matchesGameName && matchesPlayType;
+    });
+  }, [entries, searchQuery, selectedGameType, selectedGameName, selectedPlayType]);
+
+  // Separate entries by playType for OPEN and CLOSE
+  const openEntries = useMemo(() => {
+    return filteredEntries.filter(entry => entry.playType?.toLowerCase() === "open");
+  }, [filteredEntries]);
+
+  const closeEntries = useMemo(() => {
+    return filteredEntries.filter(entry => entry.playType?.toLowerCase() === "close");
+  }, [filteredEntries]);
+
+  const groupByTypeAndGame = (entriesList: GameEntry[]) => {
     const grouped: Record<string, { gameName: string; entries: GameEntry[] }[]> = {};
     
-    filteredEntries.forEach((entry) => {
+    entriesList.forEach((entry) => {
       const type = getGameTypeDisplayName(entry.gameType || "Unknown");
       const gameName = entry.gameName || "Unknown Game";
       
@@ -197,7 +207,7 @@ useEffect(() => {
     });
     
     return grouped;
-  }, [filteredEntries]);
+  };
 
   const getNumberGroups = (items: GameEntry[]) => {
     const byNum: Record<string, { entries: GameEntry[]; totalAmount: number; totalEntries: number }> = {};
@@ -291,9 +301,9 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Stats Cards - Show Total Entries and Total Amount */}
+      {/* Stats Cards */}
       {filteredEntries.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-200">
             <div className="flex items-center justify-between">
               <div>
@@ -301,7 +311,7 @@ useEffect(() => {
                 <p className="text-2xl font-mono font-bold text-gray-900 mt-1">{totalEntries}</p>
               </div>
               <div className="bg-blue-100 p-3 rounded-xl">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <ListChecks className="w-5 h-5 text-blue-600" />
               </div>
             </div>
           </div>
@@ -329,6 +339,34 @@ useEffect(() => {
               </div>
             </div>
           </div>
+
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-mono font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+                  <Unlock className="w-3 h-3" /> OPEN
+                </p>
+                <p className="text-2xl font-mono font-bold text-gray-900 mt-1">{openEntries.length}</p>
+              </div>
+              <div className="bg-emerald-100 p-3 rounded-xl">
+                <Unlock className="w-5 h-5 text-emerald-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-rose-50 to-red-50 rounded-2xl p-4 border border-rose-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-mono font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> CLOSE
+                </p>
+                <p className="text-2xl font-mono font-bold text-gray-900 mt-1">{closeEntries.length}</p>
+              </div>
+              <div className="bg-rose-100 p-3 rounded-xl">
+                <Lock className="w-5 h-5 text-rose-600" />
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -347,6 +385,7 @@ useEffect(() => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
+            {/* Game Name Filter */}
             {gameNames.length > 1 && (
               <div className="flex-1 flex items-center gap-3">
                 <Gamepad2 className="w-4 h-4 text-gray-500 flex-shrink-0" />
@@ -363,6 +402,7 @@ useEffect(() => {
               </div>
             )}
 
+            {/* Game Type Filter */}
             {gameTypes.length > 1 && (
               <div className="flex-1 flex items-center gap-3">
                 <Filter className="w-4 h-4 text-gray-500 flex-shrink-0" />
@@ -380,6 +420,46 @@ useEffect(() => {
               </div>
             )}
 
+            {/* OPEN/CLOSE Filter - NEW */}
+            <div className="flex-1 flex items-center gap-3">
+              <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg">
+                <button
+                  onClick={() => setSelectedPlayType("all")}
+                  className={`px-3 py-1.5 text-xs font-mono font-semibold rounded-md transition-all ${
+                    selectedPlayType === "all"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  <ListChecks className="w-3 h-3 inline mr-1" />
+                  ALL
+                </button>
+                <button
+                  onClick={() => setSelectedPlayType("open")}
+                  className={`px-3 py-1.5 text-xs font-mono font-semibold rounded-md transition-all ${
+                    selectedPlayType === "open"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  <Unlock className="w-3 h-3 inline mr-1" />
+                  OPEN
+                </button>
+                <button
+                  onClick={() => setSelectedPlayType("close")}
+                  className={`px-3 py-1.5 text-xs font-mono font-semibold rounded-md transition-all ${
+                    selectedPlayType === "close"
+                      ? "bg-rose-600 text-white shadow-sm"
+                      : "text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  <Lock className="w-3 h-3 inline mr-1" />
+                  CLOSE
+                </button>
+              </div>
+            </div>
+
+            {/* Refresh Button */}
             <button
               onClick={handleRefresh}
               disabled={refreshing}
@@ -390,7 +470,8 @@ useEffect(() => {
             </button>
           </div>
 
-          {(selectedGameName !== "all" || selectedGameType !== "all") && (
+          {/* Active Filters Display */}
+          {(selectedGameName !== "all" || selectedGameType !== "all" || selectedPlayType !== "all") && (
             <div className="flex flex-wrap gap-2 pt-2">
               <span className="text-[10px] font-mono text-gray-500">Active filters:</span>
               {selectedGameName !== "all" && (
@@ -405,16 +486,36 @@ useEffect(() => {
                   <button onClick={() => setSelectedGameType("all")} className="hover:text-purple-900 ml-1">×</button>
                 </span>
               )}
-              {(selectedGameName !== "all" || selectedGameType !== "all") && (
-                <button onClick={() => { setSelectedGameName("all"); setSelectedGameType("all"); }} className="text-[10px] font-mono text-red-500 hover:text-red-700">Clear all</button>
+              {selectedPlayType !== "all" && (
+                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-mono font-semibold ${
+                  selectedPlayType === "open" 
+                    ? "bg-emerald-100 text-emerald-700" 
+                    : "bg-rose-100 text-rose-700"
+                }`}>
+                  {selectedPlayType === "open" ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                  {selectedPlayType.toUpperCase()}
+                  <button onClick={() => setSelectedPlayType("all")} className="hover:opacity-70 ml-1">×</button>
+                </span>
+              )}
+              {(selectedGameName !== "all" || selectedGameType !== "all" || selectedPlayType !== "all") && (
+                <button 
+                  onClick={() => { 
+                    setSelectedGameName("all"); 
+                    setSelectedGameType("all");
+                    setSelectedPlayType("all");
+                  }} 
+                  className="text-[10px] font-mono text-red-500 hover:text-red-700"
+                >
+                  Clear all
+                </button>
               )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Results - Grouped by Game Type then Game Name */}
-      {Object.keys(groupedByTypeAndGame).length === 0 ? (
+      {/* Results - Separate OPEN and CLOSE Sections based on filter */}
+      {filteredEntries.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-2xl mb-4">
             <Search className="w-8 h-8 text-gray-400" />
@@ -424,120 +525,252 @@ useEffect(() => {
           </p>
         </div>
       ) : (
-        <Accordion type="multiple" className="space-y-4">
-          {Object.entries(groupedByTypeAndGame).map(([type, gameGroups]) => {
-            const typeTotalAmount = gameGroups.reduce(
-              (sum, group) => sum + group.entries.reduce((s, e) => s + (e.amount || 0), 0),
-              0
-            );
-            const typeTotalEntries = gameGroups.reduce((sum, group) => sum + group.entries.length, 0);
-            const uniqueNumbers = new Set(gameGroups.flatMap(g => g.entries.map(e => e.number))).size;
+        <div className="space-y-8">
+          
+          {/* Show based on filter selection */}
+          {(selectedPlayType === "all" || selectedPlayType === "open") && openEntries.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-emerald-200">
+                <div className="bg-emerald-100 p-2 rounded-xl">
+                  <Unlock className="w-5 h-5 text-emerald-600" />
+                </div>
+                <h2 className="text-lg font-mono font-bold text-emerald-700">OPEN Entries</h2>
+                <span className="text-xs font-mono bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">{openEntries.length} entries</span>
+                <span className="text-xs font-mono text-gray-500 ml-auto">
+                  Total: ₹{openEntries.reduce((sum, e) => sum + (e.amount || 0), 0).toLocaleString()}
+                </span>
+              </div>
+              
+              <Accordion type="multiple" className="space-y-4">
+                {Object.entries(groupByTypeAndGame(openEntries)).map(([type, gameGroups]) => {
+                  const typeTotalAmount = gameGroups.reduce(
+                    (sum, group) => sum + group.entries.reduce((s, e) => s + (e.amount || 0), 0),
+                    0
+                  );
+                  const typeTotalEntries = gameGroups.reduce((sum, group) => sum + group.entries.length, 0);
+                  const uniqueNumbers = new Set(gameGroups.flatMap(g => g.entries.map(e => e.number))).size;
 
-            return (
-              <AccordionItem
-                key={type}
-                value={type}
-                className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
-              >
-                <AccordionTrigger className="px-5 py-4 font-mono text-sm hover:no-underline hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-all duration-200">
-                  <div className="flex justify-between w-full pr-4 items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-100 p-2 rounded-xl">
-                        <Award className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <span className="font-bold text-gray-900 text-base">{type}</span>
-                    </div>
-                    <div className="flex gap-6 text-xs">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-gray-500" />
-                        <span className="font-semibold text-gray-600">{typeTotalEntries} entries</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="w-3 h-3 text-gray-500" />
-                        <span className="font-bold text-blue-600">₹{typeTotalAmount.toLocaleString()}</span>
-                      </div>
-                      <div className="hidden sm:flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3 text-gray-500" />
-                        <span className="font-semibold text-gray-600">{uniqueNumbers} numbers</span>
-                      </div>
-                    </div>
-                  </div>
-                </AccordionTrigger>
-
-                <AccordionContent className="px-5 pb-5 pt-2">
-                  {gameGroups.map((gameGroup) => {
-                    const gameTotalAmount = gameGroup.entries.reduce((sum, e) => sum + (e.amount || 0), 0);
-                    const gameTotalEntries = gameGroup.entries.length;
-                    
-                    return (
-                      <div key={gameGroup.gameName} className="mb-6 last:mb-0">
-                        <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-blue-200">
-                          <Gamepad2 className="w-4 h-4 text-blue-600" />
-                          <h4 className="font-mono font-bold text-base text-blue-800">
-                            {gameGroup.gameName}
-                          </h4>
-                          <span className="text-xs font-mono text-gray-500 ml-auto">
-                            {gameTotalEntries} bets | ₹{gameTotalAmount.toLocaleString()}
-                          </span>
+                  return (
+                    <AccordionItem
+                      key={type}
+                      value={type}
+                      className="bg-white border border-emerald-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
+                    >
+                      <AccordionTrigger className="px-5 py-4 font-mono text-sm hover:no-underline hover:bg-gradient-to-r hover:from-emerald-50 hover:to-white transition-all duration-200">
+                        <div className="flex justify-between w-full pr-4 items-center">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-emerald-100 p-2 rounded-xl">
+                              <Award className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <span className="font-bold text-gray-900 text-base">{type}</span>
+                          </div>
+                          <div className="flex gap-6 text-xs">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-gray-500" />
+                              <span className="font-semibold text-gray-600">{typeTotalEntries} entries</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3 text-gray-500" />
+                              <span className="font-bold text-emerald-600">₹{typeTotalAmount.toLocaleString()}</span>
+                            </div>
+                            <div className="hidden sm:flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3 text-gray-500" />
+                              <span className="font-semibold text-gray-600">{uniqueNumbers} numbers</span>
+                            </div>
+                          </div>
                         </div>
+                      </AccordionTrigger>
 
-                        {getNumberGroups(gameGroup.entries).map(([num, data]) => {
+                      <AccordionContent className="px-5 pb-5 pt-2">
+                        {gameGroups.map((gameGroup) => {
+                          const gameTotalAmount = gameGroup.entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+                          const gameTotalEntries = gameGroup.entries.length;
+                          
                           return (
-                            <div
-                              key={num}
-                              className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mb-4 border border-gray-200 hover:shadow-md transition-all duration-300 hover:border-blue-200"
-                            >
-                              <div className="flex justify-between items-center mb-3">
-                                <div className="flex items-center gap-3">
-                                  <div className="bg-blue-100 w-12 h-12 rounded-xl flex items-center justify-center">
-                                    <span className="font-mono font-black text-blue-600 text-xl">{num}</span>
-                                  </div>
-                                  <div>
-                                    <p className="text-[10px] font-mono text-gray-500">Total Bets</p>
-                                    <p className="text-xs font-mono font-bold text-gray-900">{data.totalEntries} bets</p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-[10px] font-mono text-gray-500">Total Amount</p>
-                                  <p className="text-lg font-mono font-bold text-blue-600">₹{data.totalAmount.toLocaleString()}</p>
-                                </div>
+                            <div key={gameGroup.gameName} className="mb-6 last:mb-0">
+                              <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-emerald-200">
+                                <Gamepad2 className="w-4 h-4 text-emerald-600" />
+                                <h4 className="font-mono font-bold text-base text-emerald-800">
+                                  {gameGroup.gameName}
+                                </h4>
+                                <span className="text-xs font-mono text-gray-500 ml-auto">
+                                  {gameTotalEntries} bets | ₹{gameTotalAmount.toLocaleString()}
+                                </span>
                               </div>
 
-                              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
-                                {data.entries.map((entry, index) => (
-                                  <div
-                                    key={entry.id ?? `${num}-${index}`}
-                                    className="group relative inline-flex flex-col bg-white border border-gray-200 px-3 py-2 rounded-lg hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-help min-w-[160px]"
-                                    title={`${entry.gameName} - ${entry.createdAt ? new Date(entry.createdAt).toLocaleString() : "No date"}`}
-                                  >
-                                    <div className="flex items-center justify-between gap-2">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                                          <Users className="w-3 h-3 text-gray-600" />
-                                        </div>
-                                        <span className="text-xs font-mono font-bold text-gray-800 truncate max-w-[100px]">
-                                          {entry.playerName || "Unknown"}
-                                        </span>
+                              {getNumberGroups(gameGroup.entries).map(([num, data]) => (
+                                <div key={num} className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mb-4 border border-gray-200 hover:shadow-md transition-all duration-300 hover:border-emerald-200">
+                                  <div className="flex justify-between items-center mb-3">
+                                    <div className="flex items-center gap-3">
+                                      <div className="bg-emerald-100 w-12 h-12 rounded-xl flex items-center justify-center">
+                                        <span className="font-mono font-black text-emerald-600 text-xl">{num}</span>
                                       </div>
-                                      <span className="text-xs font-mono font-bold text-blue-600">₹{entry.amount}</span>
+                                      <div>
+                                        <p className="text-[10px] font-mono text-gray-500">Total Bets</p>
+                                        <p className="text-xs font-mono font-bold text-gray-900">{data.totalEntries} bets</p>
+                                      </div>
                                     </div>
-                                    <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <Clock className="w-3 h-3 text-gray-400" />
+                                    <div className="text-right">
+                                      <p className="text-[10px] font-mono text-gray-500">Total Amount</p>
+                                      <p className="text-lg font-mono font-bold text-emerald-600">₹{data.totalAmount.toLocaleString()}</p>
                                     </div>
                                   </div>
-                                ))}
-                              </div>
+
+                                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
+                                    {data.entries.map((entry, index) => (
+                                      <div key={entry.id ?? `${num}-${index}`} className="group relative inline-flex flex-col bg-white border border-gray-200 px-3 py-2 rounded-lg hover:shadow-md hover:border-emerald-300 transition-all duration-200 cursor-help min-w-[160px]">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                              <Users className="w-3 h-3 text-gray-600" />
+                                            </div>
+                                            <span className="text-xs font-mono font-bold text-gray-800 truncate max-w-[100px]">
+                                              {entry.playerName || "Unknown"}
+                                            </span>
+                                          </div>
+                                          <span className="text-xs font-mono font-bold text-emerald-600">₹{entry.amount}</span>
+                                        </div>
+                                        <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <Clock className="w-3 h-3 text-gray-400" />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           );
                         })}
-                      </div>
-                    );
-                  })}
-                </AccordionContent>
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+            </div>
+          )}
+
+          {/* CLOSE ENTRIES SECTION */}
+          {(selectedPlayType === "all" || selectedPlayType === "close") && closeEntries.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-rose-200">
+                <div className="bg-rose-100 p-2 rounded-xl">
+                  <Lock className="w-5 h-5 text-rose-600" />
+                </div>
+                <h2 className="text-lg font-mono font-bold text-rose-700">CLOSE Entries</h2>
+                <span className="text-xs font-mono bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full">{closeEntries.length} entries</span>
+                <span className="text-xs font-mono text-gray-500 ml-auto">
+                  Total: ₹{closeEntries.reduce((sum, e) => sum + (e.amount || 0), 0).toLocaleString()}
+                </span>
+              </div>
+              
+              <Accordion type="multiple" className="space-y-4">
+                {Object.entries(groupByTypeAndGame(closeEntries)).map(([type, gameGroups]) => {
+                  const typeTotalAmount = gameGroups.reduce(
+                    (sum, group) => sum + group.entries.reduce((s, e) => s + (e.amount || 0), 0),
+                    0
+                  );
+                  const typeTotalEntries = gameGroups.reduce((sum, group) => sum + group.entries.length, 0);
+                  const uniqueNumbers = new Set(gameGroups.flatMap(g => g.entries.map(e => e.number))).size;
+
+                  return (
+                    <AccordionItem
+                      key={type}
+                      value={type}
+                      className="bg-white border border-rose-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
+                    >
+                      <AccordionTrigger className="px-5 py-4 font-mono text-sm hover:no-underline hover:bg-gradient-to-r hover:from-rose-50 hover:to-white transition-all duration-200">
+                        <div className="flex justify-between w-full pr-4 items-center">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-rose-100 p-2 rounded-xl">
+                              <Award className="w-4 h-4 text-rose-600" />
+                            </div>
+                            <span className="font-bold text-gray-900 text-base">{type}</span>
+                          </div>
+                          <div className="flex gap-6 text-xs">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-gray-500" />
+                              <span className="font-semibold text-gray-600">{typeTotalEntries} entries</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3 text-gray-500" />
+                              <span className="font-bold text-rose-600">₹{typeTotalAmount.toLocaleString()}</span>
+                            </div>
+                            <div className="hidden sm:flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3 text-gray-500" />
+                              <span className="font-semibold text-gray-600">{uniqueNumbers} numbers</span>
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionTrigger>
+
+                      <AccordionContent className="px-5 pb-5 pt-2">
+                        {gameGroups.map((gameGroup) => {
+                          const gameTotalAmount = gameGroup.entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+                          const gameTotalEntries = gameGroup.entries.length;
+                          
+                          return (
+                            <div key={gameGroup.gameName} className="mb-6 last:mb-0">
+                              <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-rose-200">
+                                <Gamepad2 className="w-4 h-4 text-rose-600" />
+                                <h4 className="font-mono font-bold text-base text-rose-800">
+                                  {gameGroup.gameName}
+                                </h4>
+                                <span className="text-xs font-mono text-gray-500 ml-auto">
+                                  {gameTotalEntries} bets | ₹{gameTotalAmount.toLocaleString()}
+                                </span>
+                              </div>
+
+                              {getNumberGroups(gameGroup.entries).map(([num, data]) => (
+                                <div key={num} className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mb-4 border border-gray-200 hover:shadow-md transition-all duration-300 hover:border-rose-200">
+                                  <div className="flex justify-between items-center mb-3">
+                                    <div className="flex items-center gap-3">
+                                      <div className="bg-rose-100 w-12 h-12 rounded-xl flex items-center justify-center">
+                                        <span className="font-mono font-black text-rose-600 text-xl">{num}</span>
+                                      </div>
+                                      <div>
+                                        <p className="text-[10px] font-mono text-gray-500">Total Bets</p>
+                                        <p className="text-xs font-mono font-bold text-gray-900">{data.totalEntries} bets</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-[10px] font-mono text-gray-500">Total Amount</p>
+                                      <p className="text-lg font-mono font-bold text-rose-600">₹{data.totalAmount.toLocaleString()}</p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
+                                    {data.entries.map((entry, index) => (
+                                      <div key={entry.id ?? `${num}-${index}`} className="group relative inline-flex flex-col bg-white border border-gray-200 px-3 py-2 rounded-lg hover:shadow-md hover:border-rose-300 transition-all duration-200 cursor-help min-w-[160px]">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                              <Users className="w-3 h-3 text-gray-600" />
+                                            </div>
+                                            <span className="text-xs font-mono font-bold text-gray-800 truncate max-w-[100px]">
+                                              {entry.playerName || "Unknown"}
+                                            </span>
+                                          </div>
+                                          <span className="text-xs font-mono font-bold text-rose-600">₹{entry.amount}</span>
+                                        </div>
+                                        <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <Clock className="w-3 h-3 text-gray-400" />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

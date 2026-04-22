@@ -16,10 +16,16 @@ const AdminNotice = () => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    content: string;
+    type: 'info' | 'warning' | 'success' | 'danger';
+    expiresAt: string;
+    isActive: boolean;
+  }>({
     title: '',
     content: '',
-    type: 'info' as const,
+    type: 'info',
     expiresAt: '',
     isActive: true
   });
