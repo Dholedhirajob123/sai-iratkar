@@ -50,12 +50,41 @@ const VALID_DOUBLE_DIGIT_CENTER: string[] = ["10", "11", "12", "13", "14", "15",
   "81", "82", "83", "84", "85", "86", "87", "88", "89", "90",
   "91", "92", "93", "94", "95", "96", "97", "98", "99","00"];
 
+// Helper: convert "HH:MM" to "h:MM AM/PM" (12-hour format)
+const formatTime12Hour = (timeStr: string): string => {
+  if (!timeStr) return "";
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  const period = hours >= 12 ? "PM" : "AM";
+  let hour12 = hours % 12;
+  if (hour12 === 0) hour12 = 12;
+  return `${hour12}:${minutes.toString().padStart(2, "0")} ${period}`;
+};
+
+// Helper: check if current time >= timeStr (ignores date, just time-of-day)
 const isTimeReachedOrPassed = (timeStr: string): boolean => {
   const now = new Date();
   const [hours, minutes] = timeStr.split(":").map(Number);
   const timeDate = new Date();
   timeDate.setHours(hours, minutes, 0, 0);
   return now >= timeDate;
+};
+
+// For a given close time, determine if admin is allowed to declare close result
+// Allowed if close time has passed OR (it's next morning before 9:30 AM and close time was yesterday)
+const isCloseResultAllowed = (closeTimeStr: string): boolean => {
+  if (isTimeReachedOrPassed(closeTimeStr)) return true;
+  
+  const now = new Date();
+  const [closeHours] = closeTimeStr.split(":").map(Number);
+  const nowHours = now.getHours();
+  const nowMinutes = now.getMinutes();
+  
+  if (nowHours < 9 || (nowHours === 9 && nowMinutes <= 30)) {
+    if (closeHours >= 20 || closeHours <= 5) {
+      return true;
+    }
+  }
+  return false;
 };
 
 const stripNonDigits = (value: string): string => value.replace(/[^0-9]/g, "");
@@ -97,7 +126,7 @@ const AdminGames = () => {
   const getGameActiveValue = (game: Game): boolean => typeof game.active === "boolean" ? game.active : false;
 
   const isOpenTimeReached = (openTime: string) => isTimeReachedOrPassed(openTime);
-  const isCloseTimeReached = (closeTime: string) => isTimeReachedOrPassed(closeTime);
+  const isCloseResultAllowedForGame = (closeTime: string) => isCloseResultAllowed(closeTime);
 
   const combineCenter = (open: string, close: string): string => {
     if (open === "*") return "*";
@@ -157,6 +186,11 @@ const AdminGames = () => {
     return { isValid: false, isSpecialDouble: false };
   };
 
+  // Helper: check if open result has been declared (leftNumber not *** and openCenter not empty)
+  const isOpenResultDeclared = (data: any): boolean => {
+    return data.leftNumber !== "***" && data.openCenter !== undefined && data.openCenter !== "";
+  };
+
   const startEdit = (g: Game) => {
     const { open, close } = splitCenter(g.centerNumber);
     setEditing(g.id);
@@ -177,6 +211,7 @@ const AdminGames = () => {
   const resetOpenCenter = () => { if (editData) setEditData({ ...editData, openCenter: "" }); };
   const resetCloseCenter = () => { if (editData) setEditData({ ...editData, closeCenter: "" }); };
   const resetRightNumber = () => { if (editData) setEditData({ ...editData, rightNumber: "***" }); };
+  
   const resetAllNumbers = () => {
     if (editData) {
       setEditData({
@@ -191,77 +226,147 @@ const AdminGames = () => {
   };
 
   const saveEdit = async () => {
-  if (!editData) return;
+    if (!editData) return;
 
-  const originalGame = games.find(g => g.id === editData.id);
-  if (!originalGame) {
-    toast({ title: "Error", description: "Original game not found.", variant: "destructive" });
-    return;
-  }
+    // ✅ RESET DETECTION
+    const isResetAction =
+      editData.leftNumber === "***" &&
+      editData.openCenter === "" &&
+      editData.closeCenter === "" &&
+      editData.rightNumber === "***";
 
-  const originalCenterSplit = splitCenter(originalGame.centerNumber);
-  const openTimeReached = isOpenTimeReached(editData.openTime);
-  const closeTimeReached = isCloseTimeReached(editData.closeTime);
+    const originalGame = games.find(g => g.id === editData.id);
+    if (!originalGame) {
+      toast({ title: "Error", description: "Original game not found.", variant: "destructive" });
+      return;
+    }
 
-  // Detect which fields have actually changed
-  const leftChanged = editData.leftNumber !== originalGame.leftNumber;
-  const openCenterChanged = editData.openCenter !== originalCenterSplit.open;
-  const closeCenterChanged = editData.closeCenter !== originalCenterSplit.close;
-  const rightChanged = editData.rightNumber !== originalGame.rightNumber;
+    const originalCenterSplit = splitCenter(originalGame.centerNumber);
+    const openTimeReached = isOpenTimeReached(editData.openTime);
+    const closeResultAllowed = isCloseResultAllowedForGame(editData.closeTime);
 
-  // Time-based validation – only if a field changed
-  if (leftChanged && editData.leftNumber !== "***" && !openTimeReached) {
-    toast({ title: "Cannot Declare Open Number Yet", description: `Open number can only be declared after ${editData.openTime}.`, variant: "destructive" });
-    return;
-  }
-  if (openCenterChanged && editData.openCenter && !openTimeReached) {
-    toast({ title: "Cannot Set Open Center Yet", description: `Open center can only be set after ${editData.openTime}.`, variant: "destructive" });
-    return;
-  }
-  if (closeCenterChanged && editData.closeCenter && !closeTimeReached) {
-    toast({ title: "Cannot Set Close Center Yet", description: `Close center can only be set after ${editData.closeTime}.`, variant: "destructive" });
-    return;
-  }
-  if (rightChanged && editData.rightNumber !== "***" && !closeTimeReached) {
-    toast({ title: "Cannot Declare Close Number Yet", description: `Close number can only be declared after ${editData.closeTime}.`, variant: "destructive" });
-    return;
-  }
+    // Detect changes
+    const leftChanged = editData.leftNumber !== originalGame.leftNumber;
+    const openCenterChanged = editData.openCenter !== originalCenterSplit.open;
+    const closeCenterChanged = editData.closeCenter !== originalCenterSplit.close;
+    const rightChanged = editData.rightNumber !== originalGame.rightNumber;
 
-  // Format validations – only for changed fields
-  if (leftChanged && !isValidGameNumber(editData.leftNumber, "left") && editData.leftNumber !== "***") {
-    toast({ title: "Invalid Left Number", description: getValidationErrorMessage(editData.leftNumber, "left") || "Invalid left number.", variant: "destructive" });
-    return;
-  }
-  if (rightChanged && !isValidGameNumber(editData.rightNumber, "right") && editData.rightNumber !== "***") {
-    toast({ title: "Invalid Right Number", description: getValidationErrorMessage(editData.rightNumber, "right") || "Invalid right number.", variant: "destructive" });
-    return;
-  }
-  // Center validation – only if either open or close center changed
-  if ((openCenterChanged || closeCenterChanged) && (editData.openCenter || editData.closeCenter) && !validateCenterCombination(editData.openCenter, editData.closeCenter).isValid) {
-    toast({ title: "Invalid Center Number", description: "Open Center must be a single digit (0-9) and Close Center a single digit (0-9) forming a valid double digit or single digit.", variant: "destructive" });
-    return;
-  }
+    // =====================================================
+    // NEW: BLOCK DECLARING BOTH OPEN AND CLOSE IN ONE SAVE
+    // =====================================================
+    const originalOpenResultDeclared = isOpenResultDeclared(originalGame);
+    const currentOpenResultDeclared = isOpenResultDeclared(editData);
+    const closeResultChanged = closeCenterChanged || rightChanged;
 
-  const combinedCenter = combineCenter(editData.openCenter, editData.closeCenter);
+    // If the game did NOT have an open result before editing,
+    // and we are now trying to set both open result AND close result in this same save → block
+    if (!originalOpenResultDeclared && currentOpenResultDeclared && closeResultChanged) {
+      toast({
+        title: "Invalid Action",
+        description: "You must save the open result first before declaring the close result.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  try {
-    await updateGame(editData.id, {
-      name: editData.name.trim(),
-      leftNumber: editData.leftNumber,
-      centerNumber: combinedCenter,
-      rightNumber: editData.rightNumber,
-      openTime: editData.openTime,
-      closeTime: editData.closeTime,
-      active: getGameActiveValue(editData),
-    });
-    await loadGames(true);
-    setEditing(null);
-    setEditData(null);
-    toast({ title: "Game Updated", description: `${editData.name} has been updated successfully.` });
-  } catch (error) {
-    toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to update game.", variant: "destructive" });
-  }
-};
+    // =========================
+    // 🚫 SKIP VALIDATION IF RESET
+    // =========================
+    if (!isResetAction) {
+
+      // OPEN VALIDATION
+      if (leftChanged && editData.leftNumber !== "***" && !openTimeReached) {
+        toast({
+          title: "Cannot Declare Open Number Yet",
+          description: `Open number can only be declared after ${formatTime12Hour(editData.openTime)}.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (openCenterChanged && editData.openCenter && !openTimeReached) {
+        toast({
+          title: "Cannot Set Open Center Yet",
+          description: `Open center can only be set after ${formatTime12Hour(editData.openTime)}.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // CLOSE VALIDATION (only if close result is being changed)
+      if (closeResultChanged && !closeResultAllowed) {
+        toast({
+          title: "Cannot Declare Close Result Yet",
+          description: `Close result can only be declared after ${formatTime12Hour(editData.closeTime)} (or next morning before 9:30 AM).`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Format validations
+      if (leftChanged && !isValidGameNumber(editData.leftNumber, "left") && editData.leftNumber !== "***") {
+        toast({
+          title: "Invalid Left Number",
+          description: getValidationErrorMessage(editData.leftNumber, "left"),
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (rightChanged && !isValidGameNumber(editData.rightNumber, "right") && editData.rightNumber !== "***") {
+        toast({
+          title: "Invalid Right Number",
+          description: getValidationErrorMessage(editData.rightNumber, "right"),
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (
+        (openCenterChanged || closeCenterChanged) &&
+        (editData.openCenter || editData.closeCenter) &&
+        !validateCenterCombination(editData.openCenter, editData.closeCenter).isValid
+      ) {
+        toast({
+          title: "Invalid Center Number",
+          description: "Invalid center combination",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    const combinedCenter = combineCenter(editData.openCenter, editData.closeCenter);
+
+    try {
+      await updateGame(editData.id, {
+        name: editData.name.trim(),
+        leftNumber: editData.leftNumber,
+        centerNumber: combinedCenter,
+        rightNumber: editData.rightNumber,
+        openTime: editData.openTime,
+        closeTime: editData.closeTime,
+        active: getGameActiveValue(editData),
+      });
+
+      await loadGames(true);
+      setEditing(null);
+      setEditData(null);
+
+      if (isResetAction) {
+        toast({ title: "Game Reset", description: "Old result cleared successfully." });
+      } else {
+        toast({ title: "Game Updated", description: `${editData.name} updated successfully.` });
+      }
+
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update game.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleDeleteGame = async (gameId: number, gameName: string) => {
     if (!window.confirm(`Are you sure you want to delete ${gameName}?`)) return;
@@ -401,7 +506,7 @@ const AdminGames = () => {
       <ValidNumbersList />
       <CenterNumbersList />
 
-      {/* Add Game Form (unchanged) */}
+      {/* Add Game Form */}
       {showAddForm && (
         <div className="bg-white rounded-2xl shadow-lg border-2 border-blue-200 p-6 animate-fadeIn">
           <div className="flex items-center gap-3 mb-6">
@@ -435,39 +540,94 @@ const AdminGames = () => {
             const { open, close } = splitCenter(g.centerNumber);
             const isSpecialDouble = VALID_DOUBLE_DIGIT_CENTER.includes(g.centerNumber);
             const openTimeReached = isOpenTimeReached(g.openTime);
-            const closeTimeReached = isCloseTimeReached(g.closeTime);
+            const closeResultAllowed = isCloseResultAllowedForGame(g.closeTime);
+            // Determine if the game already has an open result declared
+            const hasOpenResult = isOpenResultDeclared(g);
 
             return (
               <div key={g.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
                 {editing === g.id && editData ? (
                   <div className="p-5 space-y-4">
                     <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-xl" />
+                    
                     <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                       {/* Left Number */}
                       <div>
-                        <div className="flex items-center justify-between mb-2"><label className="text-[10px] font-mono font-bold text-gray-600">Left Number</label>{!openTimeReached && editData.leftNumber !== "***" && <span className="text-[8px] font-mono text-orange-500 flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Wait until {editData.openTime}</span>}{openTimeReached && <button onClick={resetLeftNumber} className="text-[8px] font-mono text-blue-600">Reset</button>}</div>
-                        <input value={editData.leftNumber === "***" ? "" : editData.leftNumber} maxLength={3} onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setEditData({ ...editData, leftNumber: cleaned || "***" }); }} disabled={!openTimeReached} className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!openTimeReached && editData.leftNumber !== "***" ? "border-orange-200 bg-orange-50 text-gray-500 cursor-not-allowed" : "border-gray-200"}`} />
-                        {!openTimeReached && editData.leftNumber !== "***" && <p className="text-[8px] font-mono text-orange-500 mt-1">Can declare only after {editData.openTime}</p>}
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-[10px] font-mono font-bold text-gray-600">Left Number</label>
+                          {!openTimeReached && editData.leftNumber !== "***" && (
+                            <span className="text-[8px] font-mono text-orange-500 flex items-center gap-0.5">
+                              <Timer className="w-2.5 h-2.5" /> Wait until {formatTime12Hour(editData.openTime)}
+                            </span>
+                          )}
+                          <button onClick={resetLeftNumber} className="text-[8px] font-mono text-blue-600 hover:underline">Reset</button>
+                        </div>
+                        <input 
+                          value={editData.leftNumber === "***" ? "" : editData.leftNumber} 
+                          maxLength={3} 
+                          onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setEditData({ ...editData, leftNumber: cleaned || "***" }); }} 
+                          disabled={!openTimeReached} 
+                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!openTimeReached && editData.leftNumber !== "***" ? "border-orange-200 bg-orange-50 text-gray-500 cursor-not-allowed" : "border-gray-200"}`} 
+                        />
+                        {!openTimeReached && editData.leftNumber !== "***" && <p className="text-[8px] font-mono text-orange-500 mt-1">Can declare only after {formatTime12Hour(editData.openTime)}</p>}
                         {openTimeReached && editData.leftNumber === "***" && <p className="text-[8px] font-mono text-green-600 mt-1">Ready to declare open number</p>}
                       </div>
                       {/* Open Center */}
                       <div>
-                        <div className="flex items-center justify-between mb-2"><label className="text-[10px] font-mono font-bold text-gray-600">Open Center</label><button onClick={resetOpenCenter} className="text-[8px] font-mono text-blue-600">Reset</button></div>
-                        <input value={editData.openCenter} maxLength={1} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, openCenter: val }); }} disabled={!openTimeReached} className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!openTimeReached ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} />
-                        {!openTimeReached && <p className="text-[8px] font-mono text-orange-500 mt-1">Can set only after {editData.openTime}</p>}
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-[10px] font-mono font-bold text-gray-600">Open Center</label>
+                          <button onClick={resetOpenCenter} className="text-[8px] font-mono text-blue-600 hover:underline">Reset</button>
+                        </div>
+                        <input 
+                          value={editData.openCenter} 
+                          maxLength={1} 
+                          onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, openCenter: val }); }} 
+                          disabled={!openTimeReached} 
+                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!openTimeReached ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} 
+                        />
+                        {!openTimeReached && <p className="text-[8px] font-mono text-orange-500 mt-1">Can set only after {formatTime12Hour(editData.openTime)}</p>}
                       </div>
-                      {/* Close Center */}
+                      {/* Close Center - disabled until open result is saved (i.e., original game already has open result) */}
                       <div>
-                        <div className="flex items-center justify-between mb-2"><label className="text-[10px] font-mono font-bold text-gray-600">Close Center</label><button onClick={resetCloseCenter} className="text-[8px] font-mono text-blue-600">Reset</button></div>
-                        <input value={editData.closeCenter} maxLength={1} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, closeCenter: val }); }} disabled={!closeTimeReached} className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!closeTimeReached ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} />
-                        {!closeTimeReached && <p className="text-[8px] font-mono text-orange-500 mt-1">Can set only after {editData.closeTime}</p>}
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-[10px] font-mono font-bold text-gray-600">Close Center</label>
+                          <button onClick={resetCloseCenter} className="text-[8px] font-mono text-blue-600 hover:underline">Reset</button>
+                        </div>
+                        <input 
+                          value={editData.closeCenter} 
+                          maxLength={1} 
+                          onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, closeCenter: val }); }} 
+                          // CLOSE FIELDS ARE DISABLED IF:
+                          // 1. close result not allowed by time, OR
+                          // 2. the game does NOT already have an open result saved.
+                          disabled={!closeResultAllowed || !hasOpenResult} 
+                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${(!closeResultAllowed || !hasOpenResult) ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} 
+                        />
+                        {!closeResultAllowed && <p className="text-[8px] font-mono text-orange-500 mt-1">Can set only after {formatTime12Hour(editData.closeTime)} (or next morning before 9:30 AM)</p>}
+                        {closeResultAllowed && !hasOpenResult && <p className="text-[8px] font-mono text-red-500 mt-1">Open result must be saved first</p>}
+                        {closeResultAllowed && hasOpenResult && !editData.closeCenter && <p className="text-[8px] font-mono text-green-600 mt-1">Ready to set close center</p>}
                       </div>
-                      {/* Right Number */}
+                      {/* Right Number - disabled until open result is saved */}
                       <div>
-                        <div className="flex items-center justify-between mb-2"><label className="text-[10px] font-mono font-bold text-gray-600">Right Number</label>{!closeTimeReached && editData.rightNumber !== "***" && <span className="text-[8px] font-mono text-orange-500 flex items-center gap-0.5"><Timer className="w-2.5 h-2.5" /> Wait until {editData.closeTime}</span>}{closeTimeReached && <button onClick={resetRightNumber} className="text-[8px] font-mono text-blue-600">Reset</button>}</div>
-                        <input value={editData.rightNumber === "***" ? "" : editData.rightNumber} maxLength={3} onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setEditData({ ...editData, rightNumber: cleaned || "***" }); }} disabled={!closeTimeReached} className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!closeTimeReached && editData.rightNumber !== "***" ? "border-orange-200 bg-orange-50 text-gray-500 cursor-not-allowed" : "border-gray-200"}`} />
-                        {!closeTimeReached && editData.rightNumber !== "***" && <p className="text-[8px] font-mono text-orange-500 mt-1">Can declare only after {editData.closeTime}</p>}
-                        {closeTimeReached && editData.rightNumber === "***" && <p className="text-[8px] font-mono text-green-600 mt-1">Ready to declare close number</p>}
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="text-[10px] font-mono font-bold text-gray-600">Right Number</label>
+                          {!closeResultAllowed && editData.rightNumber !== "***" && (
+                            <span className="text-[8px] font-mono text-orange-500 flex items-center gap-0.5">
+                              <Timer className="w-2.5 h-2.5" /> Wait until {formatTime12Hour(editData.closeTime)}
+                            </span>
+                          )}
+                          <button onClick={resetRightNumber} className="text-[8px] font-mono text-blue-600 hover:underline">Reset</button>
+                        </div>
+                        <input 
+                          value={editData.rightNumber === "***" ? "" : editData.rightNumber} 
+                          maxLength={3} 
+                          onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setEditData({ ...editData, rightNumber: cleaned || "***" }); }} 
+                          disabled={!closeResultAllowed || !hasOpenResult} 
+                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${(!closeResultAllowed || !hasOpenResult) ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} 
+                        />
+                        {!closeResultAllowed && editData.rightNumber !== "***" && <p className="text-[8px] font-mono text-orange-500 mt-1">Can declare only after {formatTime12Hour(editData.closeTime)}</p>}
+                        {closeResultAllowed && !hasOpenResult && <p className="text-[8px] font-mono text-red-500 mt-1">Open result must be saved first</p>}
+                        {closeResultAllowed && hasOpenResult && editData.rightNumber === "***" && <p className="text-[8px] font-mono text-green-600 mt-1">Ready to declare close number</p>}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -488,18 +648,19 @@ const AdminGames = () => {
                           <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center"><span className="text-xs font-mono font-bold text-blue-600">#{index + 1}</span></div>
                           <h3 className="font-mono font-bold text-lg text-gray-900">{g.name}</h3>
                           <span className={`px-2.5 py-1 rounded-full text-[9px] font-mono font-bold ${isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{isActive ? "● Active" : "● Inactive"}</span>
-                          {!openTimeReached && g.leftNumber !== "***" && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-orange-100 text-orange-700 flex items-center gap-1"><Timer className="w-2.5 h-2.5" /> Open at {g.openTime}</span>}
-                          {!closeTimeReached && g.rightNumber !== "***" && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-orange-100 text-orange-700 flex items-center gap-1"><Timer className="w-2.5 h-2.5" /> Close at {g.closeTime}</span>}
+                          {!openTimeReached && g.leftNumber !== "***" && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-orange-100 text-orange-700 flex items-center gap-1"><Timer className="w-2.5 h-2.5" /> Open at {formatTime12Hour(g.openTime)}</span>}
+                          {!closeResultAllowed && g.rightNumber !== "***" && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-orange-100 text-orange-700 flex items-center gap-1"><Timer className="w-2.5 h-2.5" /> Close at {formatTime12Hour(g.closeTime)}</span>}
                           {openTimeReached && g.leftNumber === "***" && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-green-100 text-green-700 flex items-center gap-1"><Play className="w-2.5 h-2.5" /> Ready to Declare Open</span>}
-                          {closeTimeReached && g.rightNumber === "***" && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-green-100 text-green-700 flex items-center gap-1"><StopCircle className="w-2.5 h-2.5" /> Ready to Declare Close</span>}
+                          {closeResultAllowed && g.rightNumber === "***" && hasOpenResult && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-green-100 text-green-700 flex items-center gap-1"><StopCircle className="w-2.5 h-2.5" /> Ready to Declare Close</span>}
+                          {closeResultAllowed && g.rightNumber === "***" && !hasOpenResult && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-yellow-100 text-yellow-700 flex items-center gap-1"><Lock className="w-2.5 h-2.5" /> Open result required first</span>}
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-sm">
                           <div className="flex items-center gap-2 rounded-lg">
                             <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg ${!openTimeReached && g.leftNumber !== "***" ? "bg-orange-100 text-orange-600" : openTimeReached && g.leftNumber === "***" ? "bg-green-100 text-green-600 animate-pulse" : "bg-gray-100"}`}>{g.leftNumber}</span>
                             <span className={`text-lg font-mono font-black px-3 py-1.5 rounded-lg ${isSpecialDouble ? "bg-red-100 text-red-600" : "bg-gray-100"}`}>{g.centerNumber}</span>
-                            <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg ${!closeTimeReached && g.rightNumber !== "***" ? "bg-orange-100 text-orange-600" : closeTimeReached && g.rightNumber === "***" ? "bg-green-100 text-green-600 animate-pulse" : "bg-gray-100"}`}>{g.rightNumber}</span>
+                            <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg ${!closeResultAllowed && g.rightNumber !== "***" ? "bg-orange-100 text-orange-600" : closeResultAllowed && g.rightNumber === "***" && hasOpenResult ? "bg-green-100 text-green-600 animate-pulse" : "bg-gray-100"}`}>{g.rightNumber}</span>
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] font-mono text-gray-500"><Clock className="w-3 h-3" />{g.openTime} – {g.closeTime}</div>
+                          <div className="flex items-center gap-1 text-[10px] font-mono text-gray-500"><Clock className="w-3 h-3" />{formatTime12Hour(g.openTime)} – {formatTime12Hour(g.closeTime)}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
