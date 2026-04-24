@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Search, Filter, TrendingUp, Users, DollarSign, Calendar, Clock, Award, Gamepad2, RefreshCw, Info, Unlock, Lock, ListChecks } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { getEntriesByGameId, getGames, Game, GameEntry } from "@/lib/gameApi";
+import { getEntriesByGameId, getGames, Game, GameEntry, getRecentEntriesByGameId } from "@/lib/gameApi";
 import { useToast } from "@/hooks/use-toast";
 
 // SP (Single Pana) Numbers - Valid 3-digit numbers for Single Pana
@@ -62,13 +62,29 @@ const getGameTypeDisplayName = (gameType: string): string => {
   return typeMap[gameType] || gameType;
 };
 
+// Helper function to format date as YYYY-MM-DD from ISO string
+const getDateKey = (dateString?: string): string => {
+  if (!dateString) return "Unknown Date";
+  const date = new Date(dateString);
+  return date.toISOString().split('T')[0];
+};
+
+// Helper to get readable date label (Today, Yesterday, or full date)
+const getDateLabel = (dateKey: string): string => {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  if (dateKey === today) return "Today";
+  if (dateKey === yesterday) return "Yesterday";
+  return dateKey;
+};
+
 const AdminEntries = () => {
   const [entries, setEntries] = useState<GameEntry[]>([]);
   const [games, setGames] = useState<Game[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGameType, setSelectedGameType] = useState<string>("all");
   const [selectedGameName, setSelectedGameName] = useState<string>("all");
-  const [selectedPlayType, setSelectedPlayType] = useState<string>("all"); // New filter for OPEN/CLOSE/ALL
+  const [selectedPlayType, setSelectedPlayType] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showNumberInfo, setShowNumberInfo] = useState(false);
@@ -92,7 +108,7 @@ const AdminEntries = () => {
       const gamesData = await getGames();
       setGames(gamesData);
 
-      const entriesPromises = gamesData.map((game) => getEntriesByGameId(game.id));
+      const entriesPromises = gamesData.map((game) => getRecentEntriesByGameId(game.id));
       const entriesResponses = await Promise.all(entriesPromises);
       const allEntries = entriesResponses.flat();
 
@@ -178,14 +194,30 @@ const AdminEntries = () => {
     });
   }, [entries, searchQuery, selectedGameType, selectedGameName, selectedPlayType]);
 
-  // Separate entries by playType for OPEN and CLOSE
-  const openEntries = useMemo(() => {
-    return filteredEntries.filter(entry => entry.playType?.toLowerCase() === "open");
+  // Group filtered entries by date (descending order: today first)
+  const entriesByDate = useMemo(() => {
+    const groups: Record<string, GameEntry[]> = {};
+    filteredEntries.forEach(entry => {
+      const dateKey = getDateKey(entry.createdAt);
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(entry);
+    });
+    // Sort date keys descending (latest first)
+    const sortedKeys = Object.keys(groups).sort().reverse();
+    const result: { dateKey: string; label: string; entries: GameEntry[] }[] = [];
+    for (const key of sortedKeys) {
+      result.push({
+        dateKey: key,
+        label: getDateLabel(key),
+        entries: groups[key]
+      });
+    }
+    return result;
   }, [filteredEntries]);
 
-  const closeEntries = useMemo(() => {
-    return filteredEntries.filter(entry => entry.playType?.toLowerCase() === "close");
-  }, [filteredEntries]);
+  // Separate entries by playType for a given list
+  const getOpenEntries = (entriesList: GameEntry[]) => entriesList.filter(e => e.playType?.toLowerCase() === "open");
+  const getCloseEntries = (entriesList: GameEntry[]) => entriesList.filter(e => e.playType?.toLowerCase() === "close");
 
   const groupByTypeAndGame = (entriesList: GameEntry[]) => {
     const grouped: Record<string, { gameName: string; entries: GameEntry[] }[]> = {};
@@ -346,7 +378,7 @@ const AdminEntries = () => {
                 <p className="text-[10px] font-mono font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
                   <Unlock className="w-3 h-3" /> OPEN
                 </p>
-                <p className="text-2xl font-mono font-bold text-gray-900 mt-1">{openEntries.length}</p>
+                <p className="text-2xl font-mono font-bold text-gray-900 mt-1">{getOpenEntries(filteredEntries).length}</p>
               </div>
               <div className="bg-emerald-100 p-3 rounded-xl">
                 <Unlock className="w-5 h-5 text-emerald-600" />
@@ -360,7 +392,7 @@ const AdminEntries = () => {
                 <p className="text-[10px] font-mono font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1">
                   <Lock className="w-3 h-3" /> CLOSE
                 </p>
-                <p className="text-2xl font-mono font-bold text-gray-900 mt-1">{closeEntries.length}</p>
+                <p className="text-2xl font-mono font-bold text-gray-900 mt-1">{getCloseEntries(filteredEntries).length}</p>
               </div>
               <div className="bg-rose-100 p-3 rounded-xl">
                 <Lock className="w-5 h-5 text-rose-600" />
@@ -420,7 +452,7 @@ const AdminEntries = () => {
               </div>
             )}
 
-            {/* OPEN/CLOSE Filter - NEW */}
+            {/* OPEN/CLOSE Filter */}
             <div className="flex-1 flex items-center gap-3">
               <div className="flex items-center gap-1 bg-gray-100 p-0.5 rounded-lg">
                 <button
@@ -514,7 +546,7 @@ const AdminEntries = () => {
         </div>
       </div>
 
-      {/* Results - Separate OPEN and CLOSE Sections based on filter */}
+      {/* Results - Grouped by Date (Today first, then Yesterday, etc.) */}
       {filteredEntries.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-2xl mb-4">
@@ -525,251 +557,268 @@ const AdminEntries = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
-          
-          {/* Show based on filter selection */}
-          {(selectedPlayType === "all" || selectedPlayType === "open") && openEntries.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-emerald-200">
-                <div className="bg-emerald-100 p-2 rounded-xl">
-                  <Unlock className="w-5 h-5 text-emerald-600" />
+        <div className="space-y-10">
+          {entriesByDate.map(({ dateKey, label, entries: dateEntries }) => (
+            <div key={dateKey} className="space-y-6">
+              {/* Date Header */}
+              <div className="flex items-center gap-3 pb-2 border-b-2 border-gray-300">
+                <div className="bg-gray-100 p-2 rounded-xl">
+                  <Calendar className="w-5 h-5 text-gray-700" />
                 </div>
-                <h2 className="text-lg font-mono font-bold text-emerald-700">OPEN Entries</h2>
-                <span className="text-xs font-mono bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">{openEntries.length} entries</span>
-                <span className="text-xs font-mono text-gray-500 ml-auto">
-                  Total: ₹{openEntries.reduce((sum, e) => sum + (e.amount || 0), 0).toLocaleString()}
+                <h2 className="text-xl font-mono font-bold text-gray-800">{label}</h2>
+                <span className="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  {dateEntries.length} entries
                 </span>
               </div>
-              
-              <Accordion type="multiple" className="space-y-4">
-                {Object.entries(groupByTypeAndGame(openEntries)).map(([type, gameGroups]) => {
-                  const typeTotalAmount = gameGroups.reduce(
-                    (sum, group) => sum + group.entries.reduce((s, e) => s + (e.amount || 0), 0),
-                    0
-                  );
-                  const typeTotalEntries = gameGroups.reduce((sum, group) => sum + group.entries.length, 0);
-                  const uniqueNumbers = new Set(gameGroups.flatMap(g => g.entries.map(e => e.number))).size;
 
-                  return (
-                    <AccordionItem
-                      key={type}
-                      value={type}
-                      className="bg-white border border-emerald-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
-                    >
-                      <AccordionTrigger className="px-5 py-4 font-mono text-sm hover:no-underline hover:bg-gradient-to-r hover:from-emerald-50 hover:to-white transition-all duration-200">
-                        <div className="flex justify-between w-full pr-4 items-center">
-                          <div className="flex items-center gap-3">
-                            <div className="bg-emerald-100 p-2 rounded-xl">
-                              <Award className="w-4 h-4 text-emerald-600" />
-                            </div>
-                            <span className="font-bold text-gray-900 text-base">{type}</span>
-                          </div>
-                          <div className="flex gap-6 text-xs">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-gray-500" />
-                              <span className="font-semibold text-gray-600">{typeTotalEntries} entries</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-3 h-3 text-gray-500" />
-                              <span className="font-bold text-emerald-600">₹{typeTotalAmount.toLocaleString()}</span>
-                            </div>
-                            <div className="hidden sm:flex items-center gap-1">
-                              <TrendingUp className="w-3 h-3 text-gray-500" />
-                              <span className="font-semibold text-gray-600">{uniqueNumbers} numbers</span>
-                            </div>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
+              {/* OPEN and CLOSE sections for this date */}
+              {(selectedPlayType === "all" || selectedPlayType === "open") && getOpenEntries(dateEntries).length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-emerald-200">
+                    <div className="bg-emerald-100 p-2 rounded-xl">
+                      <Unlock className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <h3 className="text-lg font-mono font-bold text-emerald-700">OPEN Entries</h3>
+                    <span className="text-xs font-mono bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">
+                      {getOpenEntries(dateEntries).length} entries
+                    </span>
+                    <span className="text-xs font-mono text-gray-500 ml-auto">
+                      Total: ₹{getOpenEntries(dateEntries).reduce((s, e) => s + (e.amount || 0), 0).toLocaleString()}
+                    </span>
+                  </div>
 
-                      <AccordionContent className="px-5 pb-5 pt-2">
-                        {gameGroups.map((gameGroup) => {
-                          const gameTotalAmount = gameGroup.entries.reduce((sum, e) => sum + (e.amount || 0), 0);
-                          const gameTotalEntries = gameGroup.entries.length;
-                          
-                          return (
-                            <div key={gameGroup.gameName} className="mb-6 last:mb-0">
-                              <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-emerald-200">
-                                <Gamepad2 className="w-4 h-4 text-emerald-600" />
-                                <h4 className="font-mono font-bold text-base text-emerald-800">
-                                  {gameGroup.gameName}
-                                </h4>
-                                <span className="text-xs font-mono text-gray-500 ml-auto">
-                                  {gameTotalEntries} bets | ₹{gameTotalAmount.toLocaleString()}
-                                </span>
-                              </div>
+                  <Accordion type="multiple" className="space-y-4">
+                    {Object.entries(groupByTypeAndGame(getOpenEntries(dateEntries))).map(([type, gameGroups]) => {
+                      const typeTotalAmount = gameGroups.reduce(
+                        (sum, group) => sum + group.entries.reduce((s, e) => s + (e.amount || 0), 0),
+                        0
+                      );
+                      const typeTotalEntries = gameGroups.reduce((sum, group) => sum + group.entries.length, 0);
+                      const uniqueNumbers = new Set(gameGroups.flatMap(g => g.entries.map(e => e.number))).size;
 
-                              {getNumberGroups(gameGroup.entries).map(([num, data]) => (
-                                <div key={num} className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mb-4 border border-gray-200 hover:shadow-md transition-all duration-300 hover:border-emerald-200">
-                                  <div className="flex justify-between items-center mb-3">
-                                    <div className="flex items-center gap-3">
-                                      <div className="bg-emerald-100 w-12 h-12 rounded-xl flex items-center justify-center">
-                                        <span className="font-mono font-black text-emerald-600 text-xl">{num}</span>
-                                      </div>
-                                      <div>
-                                        <p className="text-[10px] font-mono text-gray-500">Total Bets</p>
-                                        <p className="text-xs font-mono font-bold text-gray-900">{data.totalEntries} bets</p>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-[10px] font-mono text-gray-500">Total Amount</p>
-                                      <p className="text-lg font-mono font-bold text-emerald-600">₹{data.totalAmount.toLocaleString()}</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
-                                    {data.entries.map((entry, index) => (
-                                      <div key={entry.id ?? `${num}-${index}`} className="group relative inline-flex flex-col bg-white border border-gray-200 px-3 py-2 rounded-lg hover:shadow-md hover:border-emerald-300 transition-all duration-200 cursor-help min-w-[160px]">
-                                        <div className="flex items-center justify-between gap-2">
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                                              <Users className="w-3 h-3 text-gray-600" />
-                                            </div>
-                                            <span className="text-xs font-mono font-bold text-gray-800 truncate max-w-[100px]">
-                                              {entry.playerName || "Unknown"}
-                                            </span>
-                                          </div>
-                                          <span className="text-xs font-mono font-bold text-emerald-600">₹{entry.amount}</span>
-                                        </div>
-                                        <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <Clock className="w-3 h-3 text-gray-400" />
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
+                      return (
+                        <AccordionItem
+                          key={type}
+                          value={type}
+                          className="bg-white border border-emerald-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
+                        >
+                          <AccordionTrigger className="px-5 py-4 font-mono text-sm hover:no-underline hover:bg-gradient-to-r hover:from-emerald-50 hover:to-white transition-all duration-200">
+                            <div className="flex justify-between w-full pr-4 items-center">
+                              <div className="flex items-center gap-3">
+                                <div className="bg-emerald-100 p-2 rounded-xl">
+                                  <Award className="w-4 h-4 text-emerald-600" />
                                 </div>
-                              ))}
+                                <span className="font-bold text-gray-900 text-base">{type}</span>
+                              </div>
+                              <div className="flex gap-6 text-xs">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3 text-gray-500" />
+                                  <span className="font-semibold text-gray-600">{typeTotalEntries} entries</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="w-3 h-3 text-gray-500" />
+                                  <span className="font-bold text-emerald-600">₹{typeTotalAmount.toLocaleString()}</span>
+                                </div>
+                                <div className="hidden sm:flex items-center gap-1">
+                                  <TrendingUp className="w-3 h-3 text-gray-500" />
+                                  <span className="font-semibold text-gray-600">{uniqueNumbers} numbers</span>
+                                </div>
+                              </div>
                             </div>
-                          );
-                        })}
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
-            </div>
-          )}
+                          </AccordionTrigger>
 
-          {/* CLOSE ENTRIES SECTION */}
-          {(selectedPlayType === "all" || selectedPlayType === "close") && closeEntries.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-rose-200">
-                <div className="bg-rose-100 p-2 rounded-xl">
-                  <Lock className="w-5 h-5 text-rose-600" />
+                          <AccordionContent className="px-5 pb-5 pt-2">
+                            {gameGroups.map((gameGroup) => {
+                              const gameTotalAmount = gameGroup.entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+                              const gameTotalEntries = gameGroup.entries.length;
+                              
+                              return (
+                                <div key={gameGroup.gameName} className="mb-6 last:mb-0">
+                                  <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-emerald-200">
+                                    <Gamepad2 className="w-4 h-4 text-emerald-600" />
+                                    <h4 className="font-mono font-bold text-base text-emerald-800">
+                                      {gameGroup.gameName}
+                                    </h4>
+                                    <span className="text-xs font-mono text-gray-500 ml-auto">
+                                      {gameTotalEntries} bets | ₹{gameTotalAmount.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  {getNumberGroups(gameGroup.entries).map(([num, data]) => (
+                                    <div key={num} className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mb-4 border border-gray-200 hover:shadow-md transition-all duration-300 hover:border-emerald-200">
+                                      <div className="flex justify-between items-center mb-3">
+                                        <div className="flex items-center gap-3">
+                                          <div className="bg-emerald-100 w-12 h-12 rounded-xl flex items-center justify-center">
+                                            <span className="font-mono font-black text-emerald-600 text-xl">{num}</span>
+                                          </div>
+                                          <div>
+                                            <p className="text-[10px] font-mono text-gray-500">Total Bets</p>
+                                            <p className="text-xs font-mono font-bold text-gray-900">{data.totalEntries} bets</p>
+                                          </div>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-[10px] font-mono text-gray-500">Total Amount</p>
+                                          <p className="text-lg font-mono font-bold text-emerald-600">₹{data.totalAmount.toLocaleString()}</p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
+                                        {data.entries.map((entry, index) => (
+                                          <div key={entry.id ?? `${num}-${index}`} className="group relative inline-flex flex-col bg-white border border-gray-200 px-3 py-2 rounded-lg hover:shadow-md hover:border-emerald-300 transition-all duration-200 cursor-help min-w-[160px]">
+                                            <div className="flex items-center justify-between gap-2">
+                                              <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                                  <Users className="w-3 h-3 text-gray-600" />
+                                                </div>
+                                                <span className="text-xs font-mono font-bold text-gray-800 truncate max-w-[100px]">
+                                                  {entry.playerName || "Unknown"}
+                                                </span>
+                                              </div>
+                                              <span className="text-xs font-mono font-bold text-emerald-600">₹{entry.amount}</span>
+                                            </div>
+                                            <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <Clock className="w-3 h-3 text-gray-400" />
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })}
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
                 </div>
-                <h2 className="text-lg font-mono font-bold text-rose-700">CLOSE Entries</h2>
-                <span className="text-xs font-mono bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full">{closeEntries.length} entries</span>
-                <span className="text-xs font-mono text-gray-500 ml-auto">
-                  Total: ₹{closeEntries.reduce((sum, e) => sum + (e.amount || 0), 0).toLocaleString()}
-                </span>
-              </div>
-              
-              <Accordion type="multiple" className="space-y-4">
-                {Object.entries(groupByTypeAndGame(closeEntries)).map(([type, gameGroups]) => {
-                  const typeTotalAmount = gameGroups.reduce(
-                    (sum, group) => sum + group.entries.reduce((s, e) => s + (e.amount || 0), 0),
-                    0
-                  );
-                  const typeTotalEntries = gameGroups.reduce((sum, group) => sum + group.entries.length, 0);
-                  const uniqueNumbers = new Set(gameGroups.flatMap(g => g.entries.map(e => e.number))).size;
+              )}
 
-                  return (
-                    <AccordionItem
-                      key={type}
-                      value={type}
-                      className="bg-white border border-rose-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
-                    >
-                      <AccordionTrigger className="px-5 py-4 font-mono text-sm hover:no-underline hover:bg-gradient-to-r hover:from-rose-50 hover:to-white transition-all duration-200">
-                        <div className="flex justify-between w-full pr-4 items-center">
-                          <div className="flex items-center gap-3">
-                            <div className="bg-rose-100 p-2 rounded-xl">
-                              <Award className="w-4 h-4 text-rose-600" />
-                            </div>
-                            <span className="font-bold text-gray-900 text-base">{type}</span>
-                          </div>
-                          <div className="flex gap-6 text-xs">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-gray-500" />
-                              <span className="font-semibold text-gray-600">{typeTotalEntries} entries</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-3 h-3 text-gray-500" />
-                              <span className="font-bold text-rose-600">₹{typeTotalAmount.toLocaleString()}</span>
-                            </div>
-                            <div className="hidden sm:flex items-center gap-1">
-                              <TrendingUp className="w-3 h-3 text-gray-500" />
-                              <span className="font-semibold text-gray-600">{uniqueNumbers} numbers</span>
-                            </div>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
+              {(selectedPlayType === "all" || selectedPlayType === "close") && getCloseEntries(dateEntries).length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-rose-200">
+                    <div className="bg-rose-100 p-2 rounded-xl">
+                      <Lock className="w-5 h-5 text-rose-600" />
+                    </div>
+                    <h3 className="text-lg font-mono font-bold text-rose-700">CLOSE Entries</h3>
+                    <span className="text-xs font-mono bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full">
+                      {getCloseEntries(dateEntries).length} entries
+                    </span>
+                    <span className="text-xs font-mono text-gray-500 ml-auto">
+                      Total: ₹{getCloseEntries(dateEntries).reduce((s, e) => s + (e.amount || 0), 0).toLocaleString()}
+                    </span>
+                  </div>
 
-                      <AccordionContent className="px-5 pb-5 pt-2">
-                        {gameGroups.map((gameGroup) => {
-                          const gameTotalAmount = gameGroup.entries.reduce((sum, e) => sum + (e.amount || 0), 0);
-                          const gameTotalEntries = gameGroup.entries.length;
-                          
-                          return (
-                            <div key={gameGroup.gameName} className="mb-6 last:mb-0">
-                              <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-rose-200">
-                                <Gamepad2 className="w-4 h-4 text-rose-600" />
-                                <h4 className="font-mono font-bold text-base text-rose-800">
-                                  {gameGroup.gameName}
-                                </h4>
-                                <span className="text-xs font-mono text-gray-500 ml-auto">
-                                  {gameTotalEntries} bets | ₹{gameTotalAmount.toLocaleString()}
-                                </span>
-                              </div>
+                  <Accordion type="multiple" className="space-y-4">
+                    {Object.entries(groupByTypeAndGame(getCloseEntries(dateEntries))).map(([type, gameGroups]) => {
+                      const typeTotalAmount = gameGroups.reduce(
+                        (sum, group) => sum + group.entries.reduce((s, e) => s + (e.amount || 0), 0),
+                        0
+                      );
+                      const typeTotalEntries = gameGroups.reduce((sum, group) => sum + group.entries.length, 0);
+                      const uniqueNumbers = new Set(gameGroups.flatMap(g => g.entries.map(e => e.number))).size;
 
-                              {getNumberGroups(gameGroup.entries).map(([num, data]) => (
-                                <div key={num} className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mb-4 border border-gray-200 hover:shadow-md transition-all duration-300 hover:border-rose-200">
-                                  <div className="flex justify-between items-center mb-3">
-                                    <div className="flex items-center gap-3">
-                                      <div className="bg-rose-100 w-12 h-12 rounded-xl flex items-center justify-center">
-                                        <span className="font-mono font-black text-rose-600 text-xl">{num}</span>
-                                      </div>
-                                      <div>
-                                        <p className="text-[10px] font-mono text-gray-500">Total Bets</p>
-                                        <p className="text-xs font-mono font-bold text-gray-900">{data.totalEntries} bets</p>
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-[10px] font-mono text-gray-500">Total Amount</p>
-                                      <p className="text-lg font-mono font-bold text-rose-600">₹{data.totalAmount.toLocaleString()}</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
-                                    {data.entries.map((entry, index) => (
-                                      <div key={entry.id ?? `${num}-${index}`} className="group relative inline-flex flex-col bg-white border border-gray-200 px-3 py-2 rounded-lg hover:shadow-md hover:border-rose-300 transition-all duration-200 cursor-help min-w-[160px]">
-                                        <div className="flex items-center justify-between gap-2">
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                                              <Users className="w-3 h-3 text-gray-600" />
-                                            </div>
-                                            <span className="text-xs font-mono font-bold text-gray-800 truncate max-w-[100px]">
-                                              {entry.playerName || "Unknown"}
-                                            </span>
-                                          </div>
-                                          <span className="text-xs font-mono font-bold text-rose-600">₹{entry.amount}</span>
-                                        </div>
-                                        <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <Clock className="w-3 h-3 text-gray-400" />
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
+                      return (
+                        <AccordionItem
+                          key={type}
+                          value={type}
+                          className="bg-white border border-rose-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
+                        >
+                          <AccordionTrigger className="px-5 py-4 font-mono text-sm hover:no-underline hover:bg-gradient-to-r hover:from-rose-50 hover:to-white transition-all duration-200">
+                            <div className="flex justify-between w-full pr-4 items-center">
+                              <div className="flex items-center gap-3">
+                                <div className="bg-rose-100 p-2 rounded-xl">
+                                  <Award className="w-4 h-4 text-rose-600" />
                                 </div>
-                              ))}
+                                <span className="font-bold text-gray-900 text-base">{type}</span>
+                              </div>
+                              <div className="flex gap-6 text-xs">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3 text-gray-500" />
+                                  <span className="font-semibold text-gray-600">{typeTotalEntries} entries</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <DollarSign className="w-3 h-3 text-gray-500" />
+                                  <span className="font-bold text-rose-600">₹{typeTotalAmount.toLocaleString()}</span>
+                                </div>
+                                <div className="hidden sm:flex items-center gap-1">
+                                  <TrendingUp className="w-3 h-3 text-gray-500" />
+                                  <span className="font-semibold text-gray-600">{uniqueNumbers} numbers</span>
+                                </div>
+                              </div>
                             </div>
-                          );
-                        })}
-                      </AccordionContent>
-                    </AccordionItem>
-                  );
-                })}
-              </Accordion>
+                          </AccordionTrigger>
+
+                          <AccordionContent className="px-5 pb-5 pt-2">
+                            {gameGroups.map((gameGroup) => {
+                              const gameTotalAmount = gameGroup.entries.reduce((sum, e) => sum + (e.amount || 0), 0);
+                              const gameTotalEntries = gameGroup.entries.length;
+                              
+                              return (
+                                <div key={gameGroup.gameName} className="mb-6 last:mb-0">
+                                  <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-rose-200">
+                                    <Gamepad2 className="w-4 h-4 text-rose-600" />
+                                    <h4 className="font-mono font-bold text-base text-rose-800">
+                                      {gameGroup.gameName}
+                                    </h4>
+                                    <span className="text-xs font-mono text-gray-500 ml-auto">
+                                      {gameTotalEntries} bets | ₹{gameTotalAmount.toLocaleString()}
+                                    </span>
+                                  </div>
+
+                                  {getNumberGroups(gameGroup.entries).map(([num, data]) => (
+                                    <div key={num} className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 mb-4 border border-gray-200 hover:shadow-md transition-all duration-300 hover:border-rose-200">
+                                      <div className="flex justify-between items-center mb-3">
+                                        <div className="flex items-center gap-3">
+                                          <div className="bg-rose-100 w-12 h-12 rounded-xl flex items-center justify-center">
+                                            <span className="font-mono font-black text-rose-600 text-xl">{num}</span>
+                                          </div>
+                                          <div>
+                                            <p className="text-[10px] font-mono text-gray-500">Total Bets</p>
+                                            <p className="text-xs font-mono font-bold text-gray-900">{data.totalEntries} bets</p>
+                                          </div>
+                                        </div>
+                                        <div className="text-right">
+                                          <p className="text-[10px] font-mono text-gray-500">Total Amount</p>
+                                          <p className="text-lg font-mono font-bold text-rose-600">₹{data.totalAmount.toLocaleString()}</p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
+                                        {data.entries.map((entry, index) => (
+                                          <div key={entry.id ?? `${num}-${index}`} className="group relative inline-flex flex-col bg-white border border-gray-200 px-3 py-2 rounded-lg hover:shadow-md hover:border-rose-300 transition-all duration-200 cursor-help min-w-[160px]">
+                                            <div className="flex items-center justify-between gap-2">
+                                              <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                                  <Users className="w-3 h-3 text-gray-600" />
+                                                </div>
+                                                <span className="text-xs font-mono font-bold text-gray-800 truncate max-w-[100px]">
+                                                  {entry.playerName || "Unknown"}
+                                                </span>
+                                              </div>
+                                              <span className="text-xs font-mono font-bold text-rose-600">₹{entry.amount}</span>
+                                            </div>
+                                            <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <Clock className="w-3 h-3 text-gray-400" />
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })}
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
       )}
     </div>

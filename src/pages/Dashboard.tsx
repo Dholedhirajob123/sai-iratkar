@@ -538,22 +538,11 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Welcome Banner */}
+      {/* Welcome Banner - Simplified */}
       <div className="mx-4 mt-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-5 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-mono text-white/80">Welcome back,</p>
-            <h2 className="text-xl font-mono font-bold text-white">{user.name}</h2>
-            <div className="flex items-center gap-2 mt-2">
-              <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-full">
-                <Gamepad2 className="w-3 h-3 text-white" />
-                <span className="text-[9px] font-mono text-white">{activeGames} Active Games</span>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white/20 p-3 rounded-2xl">
-            <Zap className="w-8 h-8 text-white" />
-          </div>
+        <div>
+          <p className="text-xs font-mono text-white/80">Welcome back,</p>
+          <h2 className="text-xl font-mono font-bold text-white">{user.name}</h2>
         </div>
       </div>
 
@@ -621,8 +610,8 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* Games List */}
-      <div className="px-4 space-y-4 pb-24">
+      {/* Games List - Reduced gap between games */}
+      <div className="px-4 space-y-2 pb-24">
         {gamesLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="relative">

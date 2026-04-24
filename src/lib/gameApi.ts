@@ -536,6 +536,22 @@ export const getEntriesByGameId = async (
     return [];
   }
 };
+export const getRecentEntriesByGameId = async (
+  gameId: number
+): Promise<GameEntry[]> => {
+  try {
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/game-entries/recent/game/${gameId}`,
+      {
+        headers: getHeaders(),
+      }
+    );
+    return handleResponse(response);
+  } catch (error) {
+    console.error("Failed to fetch recent game entries:", error);
+    return [];
+  }
+};
 
 // ==================== LEFT NUMBERS ====================
 
