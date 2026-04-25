@@ -15,7 +15,7 @@ import {
   UserCircle,
   ChevronDown,
   Megaphone,
-  Percent
+  // Percent - REMOVED
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -53,7 +53,7 @@ const AdminLayout = () => {
     { id: "history", label: "History", icon: History, path: "/admin/history", color: "orange", description: "Audit logs and history" },
     { id: "results", label: "Results", icon: Trophy, path: "/admin/results", color: "yellow", description: "Check results and stats" },
     { id: "notice", label: "Notice", icon: Megaphone, path: "/admin/notice", color: "red", description: "Manage announcements" },
-    { id: "gamerates", label: "Game Rates", icon: Percent, path: "/admin/gamerates", color: "indigo", description: "Manage game multipliers" },
+    // Game Rates tab - REMOVED
   ];
 
   const currentTab = tabs.find((tab) => location.pathname === tab.path)?.id || "users";
@@ -66,7 +66,7 @@ const AdminLayout = () => {
       orange: "bg-orange-50 text-orange-600 border-orange-200",
       yellow: "bg-yellow-50 text-yellow-600 border-yellow-200",
       red: "bg-red-50 text-red-600 border-red-200",
-      indigo: "bg-indigo-50 text-indigo-600 border-indigo-200",
+      // indigo: "bg-indigo-50 text-indigo-600 border-indigo-200", - REMOVED
     };
     return colors[color as keyof typeof colors] || colors.blue;
   };

@@ -446,59 +446,59 @@ const AdminGames = () => {
   if (loading && games.length === 0) return <div>Loading...</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Current Time Display */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4">
+    <div className="space-y-3">
+      {/* Current Time Display - Compact */}
+      <div className="bg-white rounded-xl shadow-md border border-gray-100 p-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Timer className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-mono font-semibold text-gray-700">Current Server Time:</span>
+          <div className="flex items-center gap-1.5">
+            <Timer className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-[10px] font-mono font-semibold text-gray-700">Server Time:</span>
           </div>
-          <span className="text-sm font-mono font-bold text-blue-600">
+          <span className="text-[10px] font-mono font-bold text-blue-600">
             {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
           </span>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg">
+      {/* Stats Cards - Compact */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-2 text-white shadow-md">
           <div className="flex items-center justify-between">
-            <div><p className="text-xs font-mono opacity-80">Total Games</p><p className="text-3xl font-mono font-black mt-1">{stats.total}</p></div>
-            <div className="bg-white/20 p-3 rounded-xl"><Gamepad2 className="w-6 h-6" /></div>
+            <div><p className="text-[8px] font-mono opacity-80">Total</p><p className="text-lg font-mono font-black mt-0.5">{stats.total}</p></div>
+            <div className="bg-white/20 p-1.5 rounded-lg"><Gamepad2 className="w-4 h-4" /></div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-5 text-white shadow-lg">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-2 text-white shadow-md">
           <div className="flex items-center justify-between">
-            <div><p className="text-xs font-mono opacity-80">Active Games</p><p className="text-3xl font-mono font-black mt-1">{stats.active}</p></div>
-            <div className="bg-white/20 p-3 rounded-xl"><CheckCircle className="w-6 h-6" /></div>
+            <div><p className="text-[8px] font-mono opacity-80">Active</p><p className="text-lg font-mono font-black mt-0.5">{stats.active}</p></div>
+            <div className="bg-white/20 p-1.5 rounded-lg"><CheckCircle className="w-4 h-4" /></div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-2xl p-5 text-white shadow-lg">
+        <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-xl p-2 text-white shadow-md">
           <div className="flex items-center justify-between">
-            <div><p className="text-xs font-mono opacity-80">Inactive Games</p><p className="text-3xl font-mono font-black mt-1">{stats.inactive}</p></div>
-            <div className="bg-white/20 p-3 rounded-xl"><X className="w-6 h-6" /></div>
+            <div><p className="text-[8px] font-mono opacity-80">Inactive</p><p className="text-lg font-mono font-black mt-0.5">{stats.inactive}</p></div>
+            <div className="bg-white/20 p-1.5 rounded-lg"><X className="w-4 h-4" /></div>
           </div>
         </div>
       </div>
 
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
-        <div className="flex flex-col lg:flex-row gap-4">
+      {/* Search and Filter Bar - Compact */}
+      <div className="bg-white rounded-xl shadow-md border border-gray-100 p-2">
+        <div className="flex flex-col lg:flex-row gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input type="text" placeholder="Search games by name..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 border-2 border-gray-200 pl-12 pr-4 py-3.5 text-sm font-mono font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white rounded-xl transition-all duration-200" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <input type="text" placeholder="Search games..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-50 border border-gray-200 pl-8 pr-2 py-1.5 text-[11px] font-mono font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white rounded-lg transition-all" />
           </div>
-          <div className="flex items-center gap-3">
-            <select value={selectedFilter} onChange={(e) => setSelectedFilter(e.target.value as any)} className="bg-gray-50 border-2 border-gray-200 px-5 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-xl cursor-pointer hover:bg-gray-100 transition-all duration-200">
-              <option value="all">All Games</option><option value="active">Active Only</option><option value="inactive">Inactive Only</option>
+          <div className="flex items-center gap-1.5">
+            <select value={selectedFilter} onChange={(e) => setSelectedFilter(e.target.value as any)} className="bg-gray-50 border border-gray-200 px-2 py-1.5 text-[10px] font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg cursor-pointer hover:bg-gray-100 transition-all">
+              <option value="all">All</option><option value="active">Active</option><option value="inactive">Inactive</option>
             </select>
-            <button onClick={handleRefresh} disabled={refreshing} className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-mono text-sm font-bold rounded-xl flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50">
-              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} /> Refresh
+            <button onClick={handleRefresh} disabled={refreshing} className="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-mono text-[10px] font-bold rounded-lg flex items-center gap-1 transition-all shadow-md hover:shadow-lg disabled:opacity-50">
+              <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} /> Refresh
             </button>
           </div>
-          <button onClick={() => { setShowAddForm(!showAddForm); if (!showAddForm) setNewGame({ name: "", leftNumber: "***", openCenter: "", closeCenter: "", rightNumber: "***", openTime: "00:00", closeTime: "00:00", active: true }); }} className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-mono text-sm font-bold rounded-xl flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg">
-            <Plus className="w-4 h-4" /> {showAddForm ? "Cancel" : "Add New Game"}
+          <button onClick={() => { setShowAddForm(!showAddForm); if (!showAddForm) setNewGame({ name: "", leftNumber: "***", openCenter: "", closeCenter: "", rightNumber: "***", openTime: "00:00", closeTime: "00:00", active: true }); }} className="px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-mono text-[10px] font-bold rounded-lg flex items-center gap-1 transition-all shadow-md hover:shadow-lg">
+            <Plus className="w-3 h-3" /> {showAddForm ? "Cancel" : "Add"}
           </button>
         </div>
       </div>
@@ -506,34 +506,34 @@ const AdminGames = () => {
       <ValidNumbersList />
       <CenterNumbersList />
 
-      {/* Add Game Form */}
+      {/* Add Game Form - Compact */}
       {showAddForm && (
-        <div className="bg-white rounded-2xl shadow-lg border-2 border-blue-200 p-6 animate-fadeIn">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-2 rounded-xl"><Plus className="w-5 h-5 text-white" /></div>
-            <h3 className="font-mono font-bold text-lg text-gray-900">Add New Game</h3>
+        <div className="bg-white rounded-xl shadow-md border-2 border-blue-200 p-3 animate-fadeIn">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-1.5 rounded-lg"><Plus className="w-3.5 h-3.5 text-white" /></div>
+            <h3 className="font-mono font-bold text-sm text-gray-900">Add Game</h3>
           </div>
-          <div className="space-y-4">
-            <div><label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2">GAME NAME</label><input type="text" value={newGame.name} onChange={(e) => setNewGame({ ...newGame, name: e.target.value })} placeholder="Enter game name" className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white rounded-xl transition-all duration-200" /></div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div><label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2">LEFT NUMBER</label><input value={newGame.leftNumber === "***" ? "" : newGame.leftNumber} onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setNewGame({ ...newGame, leftNumber: cleaned || "***" }); }} placeholder="Left (e.g., 128)" maxLength={3} className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl" /><p className="text-[8px] font-mono text-gray-400 mt-1">Numbers only (0-9)</p></div>
-              <div><label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2">OPEN CENTER</label><input value={newGame.openCenter} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setNewGame({ ...newGame, openCenter: val }); }} placeholder="0-9" maxLength={1} className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl" /><p className="text-[8px] font-mono text-gray-400 mt-1">Single digit (0-9)</p></div>
-              <div><label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2">CLOSE CENTER</label><input value={newGame.closeCenter} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setNewGame({ ...newGame, closeCenter: val }); }} placeholder="0-9 (optional)" maxLength={1} className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl" /><p className="text-[8px] font-mono text-gray-400 mt-1">Single digit (0-9) for double-digit center</p></div>
-              <div><label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2">RIGHT NUMBER</label><input value={newGame.rightNumber === "***" ? "" : newGame.rightNumber} onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setNewGame({ ...newGame, rightNumber: cleaned || "***" }); }} placeholder="Right (e.g., 129)" maxLength={3} className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-xl" /><p className="text-[8px] font-mono text-gray-400 mt-1">Numbers only (0-9)</p></div>
+          <div className="space-y-2">
+            <div><label className="text-[9px] font-mono font-bold text-gray-700 tracking-wider block mb-0.5">GAME NAME</label><input type="text" value={newGame.name} onChange={(e) => setNewGame({ ...newGame, name: e.target.value })} placeholder="Enter game name" className="w-full bg-gray-50 border border-gray-200 px-2 py-1.5 text-[10px] font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 focus:bg-white rounded-lg transition-all" /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-1.5">
+              <div><label className="text-[8px] font-mono font-bold text-gray-700 block mb-0.5">LEFT</label><input value={newGame.leftNumber === "***" ? "" : newGame.leftNumber} onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setNewGame({ ...newGame, leftNumber: cleaned || "***" }); }} placeholder="Left" maxLength={3} className="w-full bg-gray-50 border border-gray-200 px-1.5 py-1 text-[9px] font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg" /></div>
+              <div><label className="text-[8px] font-mono font-bold text-gray-700 block mb-0.5">OPEN C</label><input value={newGame.openCenter} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setNewGame({ ...newGame, openCenter: val }); }} placeholder="0-9" maxLength={1} className="w-full bg-gray-50 border border-gray-200 px-1.5 py-1 text-[9px] font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg" /></div>
+              <div><label className="text-[8px] font-mono font-bold text-gray-700 block mb-0.5">CLOSE C</label><input value={newGame.closeCenter} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setNewGame({ ...newGame, closeCenter: val }); }} placeholder="0-9" maxLength={1} className="w-full bg-gray-50 border border-gray-200 px-1.5 py-1 text-[9px] font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg" /></div>
+              <div><label className="text-[8px] font-mono font-bold text-gray-700 block mb-0.5">RIGHT</label><input value={newGame.rightNumber === "***" ? "" : newGame.rightNumber} onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setNewGame({ ...newGame, rightNumber: cleaned || "***" }); }} placeholder="Right" maxLength={3} className="w-full bg-gray-50 border border-gray-200 px-1.5 py-1 text-[9px] font-mono font-semibold text-gray-900 text-center focus:outline-none focus:border-blue-500 rounded-lg" /></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2 flex items-center gap-1"><Play className="w-3 h-3" />OPEN TIME</label><input type="time" value={newGame.openTime} onChange={(e) => setNewGame({ ...newGame, openTime: e.target.value })} className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-xl" /></div>
-              <div><label className="text-xs font-mono font-bold text-gray-700 tracking-wider block mb-2 flex items-center gap-1"><StopCircle className="w-3 h-3" />CLOSE TIME</label><input type="time" value={newGame.closeTime} onChange={(e) => setNewGame({ ...newGame, closeTime: e.target.value })} className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-xl" /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              <div><label className="text-[8px] font-mono font-bold text-gray-700 block mb-0.5 flex items-center gap-0.5"><Play className="w-2 h-2" />OPEN</label><input type="time" value={newGame.openTime} onChange={(e) => setNewGame({ ...newGame, openTime: e.target.value })} className="w-full bg-gray-50 border border-gray-200 px-2 py-1 text-[9px] font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg" /></div>
+              <div><label className="text-[8px] font-mono font-bold text-gray-700 block mb-0.5 flex items-center gap-0.5"><StopCircle className="w-2 h-2" />CLOSE</label><input type="time" value={newGame.closeTime} onChange={(e) => setNewGame({ ...newGame, closeTime: e.target.value })} className="w-full bg-gray-50 border border-gray-200 px-2 py-1 text-[9px] font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg" /></div>
             </div>
-            <button onClick={handleAddGame} className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-3.5 font-mono text-sm font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-md hover:shadow-lg"><Plus className="w-4 h-4" /> Add Game</button>
+            <button onClick={handleAddGame} className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-1.5 font-mono text-[10px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 shadow-md hover:shadow-lg"><Plus className="w-3 h-3" /> Add Game</button>
           </div>
         </div>
       )}
 
-      {/* Games List */}
-      <div className="space-y-3">
+      {/* Games List - Compact */}
+      <div className="space-y-2">
         {filteredGames.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">No games found</div>
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 text-center text-xs">No games found</div>
         ) : (
           filteredGames.map((g, index) => {
             const isActive = getGameActiveValue(g);
@@ -541,132 +541,76 @@ const AdminGames = () => {
             const isSpecialDouble = VALID_DOUBLE_DIGIT_CENTER.includes(g.centerNumber);
             const openTimeReached = isOpenTimeReached(g.openTime);
             const closeResultAllowed = isCloseResultAllowedForGame(g.closeTime);
-            // Determine if the game already has an open result declared
             const hasOpenResult = isOpenResultDeclared(g);
 
             return (
-              <div key={g.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300">
+              <div key={g.id} className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
                 {editing === g.id && editData ? (
-                  <div className="p-5 space-y-4">
-                    <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="w-full bg-gray-50 border-2 border-gray-200 px-4 py-3 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-xl" />
+                  <div className="p-3 space-y-2">
+                    <input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="w-full bg-gray-50 border border-gray-200 px-2 py-1.5 text-[11px] font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg" />
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                      {/* Left Number */}
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-1.5">
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="text-[10px] font-mono font-bold text-gray-600">Left Number</label>
-                          {!openTimeReached && editData.leftNumber !== "***" && (
-                            <span className="text-[8px] font-mono text-orange-500 flex items-center gap-0.5">
-                              <Timer className="w-2.5 h-2.5" /> Wait until {formatTime12Hour(editData.openTime)}
-                            </span>
-                          )}
-                          <button onClick={resetLeftNumber} className="text-[8px] font-mono text-blue-600 hover:underline">Reset</button>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="text-[8px] font-mono font-bold text-gray-600">Left</label>
+                          <button onClick={resetLeftNumber} className="text-[6px] font-mono text-blue-600 hover:underline">Reset</button>
                         </div>
-                        <input 
-                          value={editData.leftNumber === "***" ? "" : editData.leftNumber} 
-                          maxLength={3} 
-                          onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setEditData({ ...editData, leftNumber: cleaned || "***" }); }} 
-                          disabled={!openTimeReached} 
-                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!openTimeReached && editData.leftNumber !== "***" ? "border-orange-200 bg-orange-50 text-gray-500 cursor-not-allowed" : "border-gray-200"}`} 
-                        />
-                        {!openTimeReached && editData.leftNumber !== "***" && <p className="text-[8px] font-mono text-orange-500 mt-1">Can declare only after {formatTime12Hour(editData.openTime)}</p>}
-                        {openTimeReached && editData.leftNumber === "***" && <p className="text-[8px] font-mono text-green-600 mt-1">Ready to declare open number</p>}
+                        <input value={editData.leftNumber === "***" ? "" : editData.leftNumber} maxLength={3} onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setEditData({ ...editData, leftNumber: cleaned || "***" }); }} disabled={!openTimeReached} className={`w-full bg-gray-50 border px-1.5 py-1 text-[10px] font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!openTimeReached && editData.leftNumber !== "***" ? "border-orange-200 bg-orange-50 text-gray-500 cursor-not-allowed" : "border-gray-200"}`} />
                       </div>
-                      {/* Open Center */}
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="text-[10px] font-mono font-bold text-gray-600">Open Center</label>
-                          <button onClick={resetOpenCenter} className="text-[8px] font-mono text-blue-600 hover:underline">Reset</button>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="text-[8px] font-mono font-bold text-gray-600">Open C</label>
+                          <button onClick={resetOpenCenter} className="text-[6px] font-mono text-blue-600 hover:underline">Reset</button>
                         </div>
-                        <input 
-                          value={editData.openCenter} 
-                          maxLength={1} 
-                          onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, openCenter: val }); }} 
-                          disabled={!openTimeReached} 
-                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!openTimeReached ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} 
-                        />
-                        {!openTimeReached && <p className="text-[8px] font-mono text-orange-500 mt-1">Can set only after {formatTime12Hour(editData.openTime)}</p>}
+                        <input value={editData.openCenter} maxLength={1} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, openCenter: val }); }} disabled={!openTimeReached} className={`w-full bg-gray-50 border px-1.5 py-1 text-[10px] font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${!openTimeReached ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} />
                       </div>
-                      {/* Close Center - disabled until open result is saved (i.e., original game already has open result) */}
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="text-[10px] font-mono font-bold text-gray-600">Close Center</label>
-                          <button onClick={resetCloseCenter} className="text-[8px] font-mono text-blue-600 hover:underline">Reset</button>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="text-[8px] font-mono font-bold text-gray-600">Close C</label>
+                          <button onClick={resetCloseCenter} className="text-[6px] font-mono text-blue-600 hover:underline">Reset</button>
                         </div>
-                        <input 
-                          value={editData.closeCenter} 
-                          maxLength={1} 
-                          onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, closeCenter: val }); }} 
-                          // CLOSE FIELDS ARE DISABLED IF:
-                          // 1. close result not allowed by time, OR
-                          // 2. the game does NOT already have an open result saved.
-                          disabled={!closeResultAllowed || !hasOpenResult} 
-                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${(!closeResultAllowed || !hasOpenResult) ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} 
-                        />
-                        {!closeResultAllowed && <p className="text-[8px] font-mono text-orange-500 mt-1">Can set only after {formatTime12Hour(editData.closeTime)} (or next morning before 9:30 AM)</p>}
-                        {closeResultAllowed && !hasOpenResult && <p className="text-[8px] font-mono text-red-500 mt-1">Open result must be saved first</p>}
-                        {closeResultAllowed && hasOpenResult && !editData.closeCenter && <p className="text-[8px] font-mono text-green-600 mt-1">Ready to set close center</p>}
+                        <input value={editData.closeCenter} maxLength={1} onChange={(e) => { const val = stripNonDigits(e.target.value).slice(0,1); setEditData({ ...editData, closeCenter: val }); }} disabled={!closeResultAllowed || !hasOpenResult} className={`w-full bg-gray-50 border px-1.5 py-1 text-[10px] font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${(!closeResultAllowed || !hasOpenResult) ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} />
                       </div>
-                      {/* Right Number - disabled until open result is saved */}
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="text-[10px] font-mono font-bold text-gray-600">Right Number</label>
-                          {!closeResultAllowed && editData.rightNumber !== "***" && (
-                            <span className="text-[8px] font-mono text-orange-500 flex items-center gap-0.5">
-                              <Timer className="w-2.5 h-2.5" /> Wait until {formatTime12Hour(editData.closeTime)}
-                            </span>
-                          )}
-                          <button onClick={resetRightNumber} className="text-[8px] font-mono text-blue-600 hover:underline">Reset</button>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <label className="text-[8px] font-mono font-bold text-gray-600">Right</label>
+                          <button onClick={resetRightNumber} className="text-[6px] font-mono text-blue-600 hover:underline">Reset</button>
                         </div>
-                        <input 
-                          value={editData.rightNumber === "***" ? "" : editData.rightNumber} 
-                          maxLength={3} 
-                          onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setEditData({ ...editData, rightNumber: cleaned || "***" }); }} 
-                          disabled={!closeResultAllowed || !hasOpenResult} 
-                          className={`w-full bg-gray-50 border-2 px-3 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${(!closeResultAllowed || !hasOpenResult) ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} 
-                        />
-                        {!closeResultAllowed && editData.rightNumber !== "***" && <p className="text-[8px] font-mono text-orange-500 mt-1">Can declare only after {formatTime12Hour(editData.closeTime)}</p>}
-                        {closeResultAllowed && !hasOpenResult && <p className="text-[8px] font-mono text-red-500 mt-1">Open result must be saved first</p>}
-                        {closeResultAllowed && hasOpenResult && editData.rightNumber === "***" && <p className="text-[8px] font-mono text-green-600 mt-1">Ready to declare close number</p>}
+                        <input value={editData.rightNumber === "***" ? "" : editData.rightNumber} maxLength={3} onChange={(e) => { const cleaned = stripNonDigits(e.target.value); setEditData({ ...editData, rightNumber: cleaned || "***" }); }} disabled={!closeResultAllowed || !hasOpenResult} className={`w-full bg-gray-50 border px-1.5 py-1 text-[10px] font-mono font-semibold text-center focus:outline-none focus:border-blue-500 rounded-lg transition-all ${(!closeResultAllowed || !hasOpenResult) ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"}`} />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div><label className="text-[10px] font-mono font-bold text-gray-600">Open Time</label><input type="time" value={editData.openTime} onChange={(e) => setEditData({ ...editData, openTime: e.target.value })} className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg" /></div>
-                      <div><label className="text-[10px] font-mono font-bold text-gray-600">Close Time</label><input type="time" value={editData.closeTime} onChange={(e) => setEditData({ ...editData, closeTime: e.target.value })} className="w-full bg-gray-50 border-2 border-gray-200 px-3 py-2.5 text-sm font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg" /></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      <div><label className="text-[8px] font-mono font-bold text-gray-600">Open Time</label><input type="time" value={editData.openTime} onChange={(e) => setEditData({ ...editData, openTime: e.target.value })} className="w-full bg-gray-50 border border-gray-200 px-1.5 py-1 text-[9px] font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg" /></div>
+                      <div><label className="text-[8px] font-mono font-bold text-gray-600">Close Time</label><input type="time" value={editData.closeTime} onChange={(e) => setEditData({ ...editData, closeTime: e.target.value })} className="w-full bg-gray-50 border border-gray-200 px-1.5 py-1 text-[9px] font-mono font-semibold text-gray-900 focus:outline-none focus:border-blue-500 rounded-lg" /></div>
                     </div>
-                    <div className="flex gap-3">
-                      <button onClick={cancelEdit} className="flex-1 flex items-center justify-center gap-1.5 border-2 border-gray-300 text-gray-600 py-2.5 font-mono text-xs font-bold rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all"><Undo2 className="w-3.5 h-3.5" /> Cancel</button>
-                      <button onClick={resetAllNumbers} className="flex-1 flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 font-mono text-xs font-bold rounded-lg transition-all border border-gray-300"><RefreshCw className="w-3.5 h-3.5" /> Reset All</button>
-                      <button onClick={saveEdit} className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white py-2.5 font-mono text-xs font-bold rounded-lg transition-all"><Save className="w-3.5 h-3.5" /> Save</button>
+                    <div className="flex gap-1.5">
+                      <button onClick={cancelEdit} className="flex-1 flex items-center justify-center gap-1 border border-gray-300 text-gray-600 py-1 font-mono text-[9px] font-bold rounded-lg hover:bg-gray-50 transition-all"><Undo2 className="w-2.5 h-2.5" /> Cancel</button>
+                      <button onClick={resetAllNumbers} className="flex-1 flex items-center justify-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 font-mono text-[9px] font-bold rounded-lg transition-all"><RefreshCw className="w-2.5 h-2.5" /> Reset</button>
+                      <button onClick={saveEdit} className="flex-1 flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white py-1 font-mono text-[9px] font-bold rounded-lg transition-all"><Save className="w-2.5 h-2.5" /> Save</button>
                     </div>
                   </div>
                 ) : (
-                  <div className="p-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="p-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center"><span className="text-xs font-mono font-bold text-blue-600">#{index + 1}</span></div>
-                          <h3 className="font-mono font-bold text-lg text-gray-900">{g.name}</h3>
-                          <span className={`px-2.5 py-1 rounded-full text-[9px] font-mono font-bold ${isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{isActive ? "● Active" : "● Inactive"}</span>
-                          {!openTimeReached && g.leftNumber !== "***" && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-orange-100 text-orange-700 flex items-center gap-1"><Timer className="w-2.5 h-2.5" /> Open at {formatTime12Hour(g.openTime)}</span>}
-                          {!closeResultAllowed && g.rightNumber !== "***" && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-orange-100 text-orange-700 flex items-center gap-1"><Timer className="w-2.5 h-2.5" /> Close at {formatTime12Hour(g.closeTime)}</span>}
-                          {openTimeReached && g.leftNumber === "***" && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-green-100 text-green-700 flex items-center gap-1"><Play className="w-2.5 h-2.5" /> Ready to Declare Open</span>}
-                          {closeResultAllowed && g.rightNumber === "***" && hasOpenResult && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-green-100 text-green-700 flex items-center gap-1"><StopCircle className="w-2.5 h-2.5" /> Ready to Declare Close</span>}
-                          {closeResultAllowed && g.rightNumber === "***" && !hasOpenResult && <span className="px-2 py-0.5 rounded-full text-[8px] font-mono bg-yellow-100 text-yellow-700 flex items-center gap-1"><Lock className="w-2.5 h-2.5" /> Open result required first</span>}
+                        <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                          <div className="w-5 h-5 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center"><span className="text-[9px] font-mono font-bold text-blue-600">#{index + 1}</span></div>
+                          <h3 className="font-mono font-bold text-xs text-gray-900">{g.name}</h3>
+                          <span className={`px-1.5 py-0.5 rounded-full text-[7px] font-mono font-bold ${isActive ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{isActive ? "Active" : "Inactive"}</span>
                         </div>
-                        <div className="flex flex-wrap items-center gap-3 text-sm">
-                          <div className="flex items-center gap-2 rounded-lg">
-                            <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg ${!openTimeReached && g.leftNumber !== "***" ? "bg-orange-100 text-orange-600" : openTimeReached && g.leftNumber === "***" ? "bg-green-100 text-green-600 animate-pulse" : "bg-gray-100"}`}>{g.leftNumber}</span>
-                            <span className={`text-lg font-mono font-black px-3 py-1.5 rounded-lg ${isSpecialDouble ? "bg-red-100 text-red-600" : "bg-gray-100"}`}>{g.centerNumber}</span>
-                            <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg ${!closeResultAllowed && g.rightNumber !== "***" ? "bg-orange-100 text-orange-600" : closeResultAllowed && g.rightNumber === "***" && hasOpenResult ? "bg-green-100 text-green-600 animate-pulse" : "bg-gray-100"}`}>{g.rightNumber}</span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <div className="flex items-center gap-1">
+                            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${!openTimeReached && g.leftNumber !== "***" ? "bg-orange-100 text-orange-600" : openTimeReached && g.leftNumber === "***" ? "bg-green-100 text-green-600 animate-pulse" : "bg-gray-100"}`}>{g.leftNumber}</span>
+                            <span className={`text-sm font-mono font-black px-1.5 py-0.5 rounded-md ${isSpecialDouble ? "bg-red-100 text-red-600" : "bg-gray-100"}`}>{g.centerNumber}</span>
+                            <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${!closeResultAllowed && g.rightNumber !== "***" ? "bg-orange-100 text-orange-600" : closeResultAllowed && g.rightNumber === "***" && hasOpenResult ? "bg-green-100 text-green-600 animate-pulse" : "bg-gray-100"}`}>{g.rightNumber}</span>
                           </div>
-                          <div className="flex items-center gap-1 text-[10px] font-mono text-gray-500"><Clock className="w-3 h-3" />{formatTime12Hour(g.openTime)} – {formatTime12Hour(g.closeTime)}</div>
+                          <div className="flex items-center gap-0.5 text-[8px] font-mono text-gray-500"><Clock className="w-2 h-2" />{formatTime12Hour(g.openTime)} – {formatTime12Hour(g.closeTime)}</div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleToggleGameStatus(g.id)} className={`p-2 rounded-lg transition-all ${isActive ? "text-green-600 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100"}`} title={isActive ? "Deactivate Game" : "Activate Game"}><Power className="w-4 h-4" /></button>
-                        <button onClick={() => startEdit(g)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Edit Game"><Pencil className="w-4 h-4" /></button>
-                        <button onClick={() => handleDeleteGame(g.id, g.name)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Delete Game"><Trash2 className="w-4 h-4" /></button>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleToggleGameStatus(g.id)} className={`p-1 rounded-lg transition-all ${isActive ? "text-green-600 hover:bg-green-50" : "text-gray-400 hover:bg-gray-100"}`}><Power className="w-3 h-3" /></button>
+                        <button onClick={() => startEdit(g)} className="p-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Pencil className="w-3 h-3" /></button>
+                        <button onClick={() => handleDeleteGame(g.id, g.name)} className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 className="w-3 h-3" /></button>
                       </div>
                     </div>
                   </div>

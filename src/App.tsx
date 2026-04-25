@@ -24,7 +24,7 @@ import {
   AdminHistory, 
   AdminResults,
   AdminNotice,
-    AdminGameRates
+    // AdminGameRates
 
 } from "./pages/admin";
 
@@ -64,7 +64,7 @@ const App = () => (
               <Route path="history" element={<AdminHistory />} />
               <Route path="results" element={<AdminResults />} />
               <Route path="notice" element={<AdminNotice />} />
-                            <Route path="gamerates" element={<AdminGameRates  />} />
+                            {/* <Route path="gamerates" element={<AdminGameRates  />} /> */}
 
             </Route>
             

@@ -44,7 +44,7 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(false);
   const [balanceInputs, setBalanceInputs] = useState<Record<number, string>>({});
   const [resetPasswordInputs, setResetPasswordInputs] = useState<Record<number, string>>({});
-  const [sortField, setSortField] = useState<keyof User>("name");
+  const [sortField, setSortField] = useState<keyof Omit<User, "canAddPlayerName">>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showPassword, setShowPassword] = useState<Record<number, boolean>>({});
@@ -225,7 +225,7 @@ const AdminUsers = () => {
     }
   };
 
-  const handleSort = (field: keyof User) => {
+  const handleSort = (field: keyof Omit<User, "canAddPlayerName">) => {
     if (sortField === field) setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     else { setSortField(field); setSortDirection("asc"); }
   };
@@ -269,7 +269,7 @@ const AdminUsers = () => {
     totalBalance: users.reduce((sum, u) => sum + u.balance, 0),
   };
 
-  const SortIcon = ({ field }: { field: keyof User }) => {
+  const SortIcon = ({ field }: { field: keyof Omit<User, "canAddPlayerName"> }) => {
     if (sortField !== field) return <ChevronDown className="w-3 h-3 opacity-30" />;
     return sortDirection === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
   };

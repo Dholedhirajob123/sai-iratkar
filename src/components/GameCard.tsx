@@ -36,8 +36,26 @@ const getGameStatus = (
   closeTime: string
 ): { openStatus: GameStatus; closeStatus: GameStatus } => {
   const now = new Date();
+
+  // ⏰ Night Block Range
+  const nightClose = new Date();
+  nightClose.setHours(0, 15, 0, 0); // 12:15 AM
+
+  const morningOpen = new Date();
+  morningOpen.setHours(9, 30, 0, 0); // 9:30 AM
+
+  // 👉 If current time is between 12:15 AM → 9:30 AM
+  if (now >= nightClose && now < morningOpen) {
+    return {
+      openStatus: "timeout",
+      closeStatus: "timeout",
+    };
+  }
+
+  // 👉 Normal logic after 9:30 AM
   const openDate = getTodayDateTime(openTime);
   const closeDate = getTodayDateTime(closeTime);
+
   return {
     openStatus: now < openDate ? "open" : "timeout",
     closeStatus: now < closeDate ? "open" : "timeout",
@@ -170,7 +188,7 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
         type="button"
         onClick={onClick}
         disabled={isTimeout}
-        className={`flex-1 flex items-center justify-center gap-2 py-2.5 font-mono text-xs font-bold transition-all duration-300 ${
+        className={`flex-1 flex items-center justify-center gap-2 py-2 font-mono text-xs font-bold transition-all duration-300 ${
           config.className
         } ${
           withBorder ? "border-r-2 border-gray-200" : ""
@@ -193,14 +211,14 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
       }`}
     >
       {/* HEADER with Game Badge - Compact */}
-      <div className="relative bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 px-3 py-2">
-        <h3 className="text-center font-mono font-bold text-sm text-gray-900 tracking-wider flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-500 to-orange-500 px-3 py-1.5 rounded-lg shadow-md text-white">
-          {game.name}
-        </h3>
-      </div>
+      <div className="relative bg-gradient-to-r from-yellow-500 to-orange-500 border-b border-yellow-600 px-2 py-2">
+  <h3 className="text-center font-mono font-bold text-xs text-white tracking-wider flex items-center justify-center gap-1">
+    {game.name}
+  </h3>
+</div>
 
       {/* NUMBERS - Reduced padding and gap */}
-      <div className="flex items-center justify-center gap-2 py-3 px-2 bg-white">
+      <div className="flex items-center justify-center gap-2 py-2 px-2 bg-white">
         {/* Left Number */}
         <span
           className="text-xl font-mono font-bold px-2 py-1 rounded-lg transition-all duration-200"
@@ -240,30 +258,30 @@ const GameCard = ({ game, onPlayOpen, onPlayClose }: GameCardProps) => {
 
       {/* TIMES with Icons and Status - Compact */}
       <div className="flex border-t border-gray-200 bg-gray-50">
-        <div className="flex-1 text-center py-2 border-r border-gray-200">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Calendar className="w-3 h-3 text-orange-500" />
-            <p className="text-[8px] font-mono font-bold text-gray-500 uppercase tracking-wider">
-              OPEN TIME
-            </p>
-          </div>
-          <p className="text-xs font-mono font-bold text-gray-800">
-            {formatTime(game.openTime)}
-          </p>
-        </div>
+  <div className="flex-1 text-center py-1 border-r border-gray-200">
+    <div className="flex items-center justify-center gap-0.5 ">
+      <TrendingUp className="w-2 h-2 text-orange-500" />
+      <p className="text-[8px] font-mono font-bold text-black-500 uppercase tracking-wider">
+        OPEN TIME
+      </p>
+    </div>
+    <p className="text-[10px] font-mono font-bold text-gray-800">
+      {formatTime(game.openTime)}
+    </p>
+  </div>
 
-        <div className="flex-1 text-center py-2">
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <TrendingUp className="w-3 h-3 text-purple-500" />
-            <p className="text-[8px] font-mono font-bold text-gray-500 uppercase tracking-wider">
-              CLOSE TIME
-            </p>
-          </div>
-          <p className="text-xs font-mono font-bold text-gray-800">
-            {formatTime(game.closeTime)}
-          </p>
-        </div>
-      </div>
+  <div className="flex-1 text-center py-1">
+    <div className="flex items-center justify-center gap-0.5 ">
+      <TrendingUp className="w-2 h-2 text-purple-500" />
+      <p className="text-[8px] font-mono font-bold text-black-500 uppercase tracking-wider">
+        CLOSE TIME
+      </p>
+    </div>
+    <p className="text-[10px] font-mono font-bold text-gray-800">
+      {formatTime(game.closeTime)}
+    </p>
+  </div>
+</div>
 
       {/* BUTTONS */}
       {!isActive ? (

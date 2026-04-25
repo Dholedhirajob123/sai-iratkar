@@ -24,7 +24,7 @@ import {
   Bell,
   Settings,
   AlertCircle,
-  Percent
+  Percent,
 } from "lucide-react";
 import {
   getGames,
@@ -36,7 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import GameCard from "@/components/GameCard";
 import GameTypeSelector from "@/components/GameTypeSelector";
 import BottomNav from "@/components/BottomNav";
-import GameRatesModal from "@/components/GameRatesModal";
+
 // Extended Game interface with color properties
 interface ExtendedGame extends Game {
   leftNumberColor?: string;
@@ -88,7 +88,7 @@ const Dashboard = () => {
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [copied, setCopied] = useState(false);
   const [submittingBet, setSubmittingBet] = useState(false);
-const [showGameRateModal, setShowGameRateModal] = useState(false);
+  const [showGameRatesModal, setShowGameRatesModal] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -313,6 +313,28 @@ useEffect(() => {
   const avgOpenRate = games.reduce((sum, g) => sum + (g.openRate || 95), 0) / (games.length || 1);
   const avgCloseRate = games.reduce((sum, g) => sum + (g.closeRate || 95), 0) / (games.length || 1);
 
+  // Game Rates Data
+  const gameRatesList = [
+    "royal morning",
+    "shrdevi",
+    "madhur morning",
+    "pune morning",
+    "time bajar",
+    "madhur day",
+    "royal day",
+    "milan day",
+    "pune day",
+    "kalyan",
+    "chandani",
+    "shrdevi night",
+    "royal night",
+    "madhur night",
+    "milan night",
+    "pune night",
+    "main bajar",
+    "chandani night"
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 pb-20">
       {/* Share Options Modal */}
@@ -373,23 +395,66 @@ useEffect(() => {
         </>
       )}
 
-      {/* Game Rate Modal */}
-      {showGameRateModal && (
+      {/* Game Rates Modal - Bottom sheet, no scroll, black text, reduced gaps */}
+      {showGameRatesModal && (
         <>
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-            onClick={() => setShowGameRateModal(false)}
+            onClick={() => setShowGameRatesModal(false)}
           />
-          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6 z-50 shadow-2xl animate-slide-up max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2">
-              <h3 className="text-lg font-mono font-bold text-gray-900 flex items-center gap-2">
-                <Percent className="w-5 h-5 text-blue-600" />
-                Game Rates
-              </h3>
-          
+          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-50 overflow-y-auto max-h-[85vh]">
+            <div className="sticky top-0 bg-white  px-4  border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-base font-bold text-black">Game Rates</h3>
+              <button 
+                type="button" 
+                onClick={() => setShowGameRatesModal(false)}
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-black" />
+              </button>
             </div>
+            
+            <div className="p-12">
+              {/* Table 1: Shridevi Special Rates */}
+              <div className="mb-2">
+                <h4 className="text-sm font-bold text-black ">✨ Shridevi /(Shridevi Night)/ Madhur (Morning/Day/Night) ✨</h4>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="grid grid-cols-2 gap-0 text-center text-xs font-bold border-b border-gray-200 bg-gray-50">
+                    <div className="p-2 text-black">Bet Type (₹10)</div>
+                    <div className="p-2 text-black">Win Amount (₹)</div>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    <div className="grid grid-cols-2 gap-0 text-center p-2"><span className="text-black text-sm">Single Digit</span><span className="text-black text-sm font-bold">95</span></div>
+                    <div className="grid grid-cols-2 gap-0 text-center p-2 bg-gray-50"><span className="text-black text-sm">Jodi</span><span className="text-black text-sm font-bold">900</span></div>
+                    <div className="grid grid-cols-2 gap-0 text-center p-2"><span className="text-black text-sm">Single Pana</span><span className="text-black text-sm font-bold">1250</span></div>
+                    <div className="grid grid-cols-2 gap-0 text-center p-2 bg-gray-50"><span className="text-black text-sm">Double Pana</span><span className="text-black text-sm font-bold">2500</span></div>
+                    <div className="grid grid-cols-2 gap-0 text-center p-2"><span className="text-black text-sm">Triple Pana</span><span className="text-black text-sm font-bold">4000</span></div>
+                  </div>
+                </div>
+              </div>
 
-           
+              {/* Table 2: Other Games Standard Rates */}
+              <div className="mb-2">
+                <h4 className="text-sm font-bold text-black ">ROYAL MORNING,PUNE MORNING,TIME BAJAR,ROYAL DAY,MILAN DAY,PUNE DAY,KALYAN,CHANDANI,ROYAL NIGHT,MILAN NIGHT,PUNE NIGHT,MAIN BAJAR,CHANDANI NIGHT
+</h4>
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="grid grid-cols-2 gap-0 text-center text-xs font-bold border-b border-gray-200 bg-gray-50">
+                    <div className="p-2 text-black">Bet Type (₹10)</div>
+                    <div className="p-2 text-black">Win Amount (₹)</div>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    <div className="grid grid-cols-2 gap-0 text-center p-2"><span className="text-black text-sm">Single Digit</span><span className="text-black text-sm font-bold">100</span></div>
+                    <div className="grid grid-cols-2 gap-0 text-center p-2 bg-gray-50"><span className="text-black text-sm">Jodi</span><span className="text-black text-sm font-bold">900</span></div>
+                    <div className="grid grid-cols-2 gap-0 text-center p-2"><span className="text-black text-sm">Single Pana</span><span className="text-black text-sm font-bold">1500</span></div>
+                    <div className="grid grid-cols-2 gap-0 text-center p-2 bg-gray-50"><span className="text-black text-sm">Double Pana</span><span className="text-black text-sm font-bold">3000</span></div>
+                    <div className="grid grid-cols-2 gap-0 text-center p-2"><span className="text-black text-sm">Triple Pana</span><span className="text-black text-sm font-bold">4000</span></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* List of Games */}
+             
+            </div>
           </div>
         </>
       )}
@@ -411,7 +476,7 @@ useEffect(() => {
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="relative w-12 h-12  rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+              <div className="relative w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
                 <img 
                   src="/icons/launchericon-192x192.png" 
                   alt="SR BOSS Logo" 
@@ -432,7 +497,7 @@ useEffect(() => {
 
         <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14  rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
               <img 
                 src="/icons/launchericon-192x192.png" 
                 alt="SR BOSS Logo" 
@@ -456,7 +521,8 @@ useEffect(() => {
             { icon: User, label: "Profile", action: () => setShowProfile(true), color: "purple", bg: "bg-purple-50", text: "text-purple-600" },
             { icon: Wallet, label: "Balance", path: "/wallet", color: "green", bg: "bg-green-50", text: "text-green-600", badge: `₹${user.balance}` },
             { icon: History, label: "History", path: "/history", color: "orange", bg: "bg-orange-50", text: "text-orange-600" },
-  { icon: Percent, label: "Game Rates", action: () => setShowGameRateModal(true), color: "indigo", bg: "bg-indigo-50", text: "text-indigo-600" },            { icon: Share2, label: "Share", action: handleShare, color: "teal", bg: "bg-teal-50", text: "text-teal-600" },
+            { icon: Percent, label: "Game Rates", action: () => setShowGameRatesModal(true), color: "pink", bg: "bg-pink-50", text: "text-pink-600" },
+            { icon: Share2, label: "Share", action: handleShare, color: "teal", bg: "bg-teal-50", text: "text-teal-600" },
           ].map((item, idx) => (
             <button
               key={idx}
@@ -539,10 +605,9 @@ useEffect(() => {
       </div>
 
       {/* Welcome Banner - Simplified */}
-      <div className="mx-4 mt-4 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-5 shadow-lg">
+      <div className="mx-2 mt-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-2 shadow-lg">
         <div>
-          <p className="text-xs font-mono text-white/80">Welcome back,</p>
-          <h2 className="text-xl font-mono font-bold text-white">{user.name}</h2>
+          <h2 className="text-xs font-mono text-white/80">Welcome back -- {user.name}</h2>
         </div>
       </div>
 
@@ -588,27 +653,6 @@ useEffect(() => {
           </div>
         </div>
       )}
-
-      {/* Games Header */}
-      <div className="flex items-center justify-between px-4 py-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-blue-100 rounded-lg">
-            <Gamepad2 className="w-4 h-4 text-blue-600" />
-          </div>
-          <span className="text-sm font-mono font-bold text-gray-700">
-            Available Games
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={loadGames}
-          disabled={gamesLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-all hover:bg-blue-50 rounded-lg"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${gamesLoading ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
-      </div>
 
       {/* Games List - Reduced gap between games */}
       <div className="px-4 space-y-2 pb-24">
@@ -660,11 +704,7 @@ useEffect(() => {
           userId={user.id}
         />
       )}
-  {/* Game Rates Popup */}
-      <GameRatesModal 
-        isOpen={showGameRateModal} 
-        onClose={() => setShowGameRateModal(false)} 
-      />
+      
       <BottomNav />
     </div>
   );
